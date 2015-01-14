@@ -1,0 +1,28 @@
+{
+  "name": "cache-manager-redis",
+  "version": "0.1.0",
+  "description": "Redis store for the node-cache-manager",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dial-once/node-cache-manager-redis.git"
+  },
+  "keywords": [
+    "cache",
+    "redis",
+    "cache manager",
+    "multiple cache"
+  ],
+  "author": "Dial Once",
+  "license": "MIT",
+  "dependencies": {
+    "cache-manager": "^0.16.0",
+    "sol-redis-pool": "^0.2.0"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-jshint": "^0.10.0",
+    "jshint-stylish": "^1.0.0",
+    "load-grunt-tasks": "^2.0.0"
+  }
+}
