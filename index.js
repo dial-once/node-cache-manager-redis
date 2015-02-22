@@ -2,109 +2,126 @@
 
 var RedisPool = require('sol-redis-pool');
 
-function RedisStore(args) {
-	args = args || {};
-
-	var store = {
+function redisStore(args) {
+	var self = {
 		name: 'redis'
 	};
+	var redisOptions = args || {};
+	var poolSettings = redisOptions;
 
-	// Configure the generic-pool settings.
-	var poolSettings = {
-		max: args.max || 10,
-		min: args.min || 2
-	};
+	redisOptions.host = args.host || '127.0.0.1';
+	redisOptions.port = args.port || 6379;
 
-	var pool = new RedisPool(args, poolSettings);
+	var pool = new RedisPool(redisOptions, poolSettings);
 
-	function connect(callback) {
-		pool.acquire(function (err, conn) {
+	function connect(cb) {
+		pool.acquire(function(err, conn) {
 			if (err) {
 				pool.release(conn);
-				return callback(err);
+				return cb(err);
 			}
 
 			if (args.db || args.db === 0) {
 				conn.select(args.db);
 			}
 
-			callback(null, conn);
+			cb(null, conn);
 		});
 	}
 
-	store.get = function (key, callback) {
-		connect(function (err, conn) {
+	function handleResponse(conn, cb, opts) {
+		opts = opts || {};
+
+		return function(err, result) {
+			pool.release(conn);
+
 			if (err) {
-				return callback(err);
+				return cb(err);
 			}
 
-			conn.get(key, function (err, result) {
-				pool.release(conn);
-				if (err) {
-					return callback(err);
-				}
-				callback(null, JSON.parse(result));
-			});
+			if (opts.parse) {
+				result = JSON.parse(result);
+			}
+
+			cb(null, result);
+		};
+	}
+
+	self.get = function(key, options, cb) {
+		if (typeof options === 'function') {
+			cb = options;
+		}
+
+		connect(function(err, conn) {
+			if (err) {
+				return cb(err);
+			}
+			conn.get(key, handleResponse(conn, cb, {
+				parse: true
+			}));
 		});
 	};
 
-	store.set = function (key, value, ttl, callback) {
-		var ttlToUse = ttl || args.ttl;
-		connect(function (err, conn) {
-			if (err) {
-				return callback(err);
-			}
+	self.set = function(key, value, options, cb) {
+		if (typeof options === 'function') {
+			cb = options;
+			options = {};
+		}
+		options = options || {};
 
-			if (ttlToUse) {
-				conn.setex(key, ttlToUse, JSON.stringify(value), function (err, result) {
-					pool.release(conn);
-					callback(err, result);
-				});
+		var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
+
+		connect(function(err, conn) {
+			if (err) {
+				return cb(err);
+			}
+			var val = JSON.stringify(value);
+
+			if (ttl) {
+				conn.setex(key, ttl, val, handleResponse(conn, cb));
 			} else {
-				conn.set(key, JSON.stringify(value), function (err, result) {
-					pool.release(conn);
-					callback(err, result);
-				});
+				conn.set(key, val, handleResponse(conn, cb));
 			}
 		});
 	};
 
-	store.del = function (key, callback) {
-		connect(function (err, conn) {
+	self.del = function(key, cb) {
+		connect(function(err, conn) {
 			if (err) {
-				return callback(err);
+				return cb(err);
 			}
-
-			conn.del(key, function (err, result) {
-				pool.release(conn);
-				callback(err, result);
-			});
+			conn.del(key, handleResponse(conn, cb));
 		});
 	};
 
-	store.keys = function (pattern, callback) {
+	self.ttl = function(key, cb) {
+		connect(function(err, conn) {
+			if (err) {
+				return cb(err);
+			}
+			conn.ttl(key, handleResponse(conn, cb));
+		});
+	};
+
+	self.keys = function(pattern, cb) {
 		if (typeof pattern === 'function') {
-			callback = pattern;
+			cb = pattern;
 			pattern = '*';
 		}
 
-		connect(function (err, conn) {
+		connect(function(err, conn) {
 			if (err) {
-				return callback(err);
+				return cb(err);
 			}
-
-			conn.keys(pattern, function (err, result) {
-				pool.release(conn);
-				callback(err, result);
-			});
+			conn.keys(pattern, handleResponse(conn, cb));
 		});
 	};
 
-	return store;
+	return self;
 }
 
 module.exports = {
-	create: function (args) {
-		return new RedisStore(args);
+	create: function(args) {
+		return redisStore(args);
 	}
 };
