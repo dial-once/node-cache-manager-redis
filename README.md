@@ -1,6 +1,8 @@
 Node Cache Manager store for Redis
 ==================================
 
+[![Codacy Badge](https://img.shields.io/codacy/5b2c2727618c4acb8d06db34c2f61c03.svg)](https://www.codacy.com/public/dialonce/node-cache-manager-redis)
+
 The Redis store for the [node-cache-manager](https://github.com/BryanDonovan/node-cache-manager) module.
 
 Installation
@@ -22,11 +24,11 @@ var cacheManager = require('cache-manager');
 var redisStore = require('cache-manager-redis');
 
 var redisCache = cacheManager.caching({
-	store: redisStore, 
+	store: redisStore,
 	host: 'localhost', // default value
 	port: 6379, // default value
 	auth_pass: 'XXXXX',
-	db: 0, 
+	db: 0,
 	ttl: 600
 });
 
