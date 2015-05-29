@@ -85,7 +85,12 @@ function redisStore(args) {
 		});
 	};
 
-	self.del = function(key, cb) {
+	self.del = function(key, options, cb) {
+    if (typeof options === 'function') {
+      cb = options;
+      options = {};
+    }
+
 		connect(function(err, conn) {
 			if (err) {
 				return cb(err);
