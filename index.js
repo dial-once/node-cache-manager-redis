@@ -86,10 +86,10 @@ function redisStore(args) {
 	};
 
 	self.del = function(key, options, cb) {
-    if (typeof options === 'function') {
-      cb = options;
-      options = {};
-    }
+	    if (typeof options === 'function') {
+	      cb = options;
+	      options = {};
+	    }
 
 		connect(function(err, conn) {
 			if (err) {
