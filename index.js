@@ -8,13 +8,20 @@ function redisStore(args) {
   };
   var redisOptions = args || {};
   var poolSettings = redisOptions;
-
+  var redisConnError = false;
+  
   redisOptions.host = args.host || '127.0.0.1';
   redisOptions.port = args.port || 6379;
 
   var pool = new RedisPool(redisOptions, poolSettings);
+  pool.on("error", function(error) {
+	  redisConnError = true;
+  });
 
   function connect(cb) {
+    if (redisConnError) {
+			return cb(new Error('Redis connection error'));
+		}
     pool.acquire(function(err, conn) {
       if (err) {
         pool.release(conn);
