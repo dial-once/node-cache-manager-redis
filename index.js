@@ -20,8 +20,8 @@ function redisStore(args) {
 
   function connect(cb) {
     if (redisConnError) {
-			return cb(new Error('Redis connection error'));
-		}
+      return cb(new Error('Redis connection error'));
+    }
     pool.acquire(function(err, conn) {
       if (err) {
         pool.release(conn);
