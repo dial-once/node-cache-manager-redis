@@ -9,20 +9,20 @@ function redisStore(args) {
   var redisOptions = args || {};
   var poolSettings = redisOptions;
   var redisConnError = false;
-  
+
   redisOptions.host = args.host || '127.0.0.1';
   redisOptions.port = args.port || 6379;
 
   var pool = new RedisPool(redisOptions, poolSettings);
-  pool.on("error", function(error) {
-	  redisConnError = true;
+  pool.on("error", function (error) {
+    redisConnError = true;
   });
 
   function connect(cb) {
     if (redisConnError) {
       return cb(new Error('Redis connection error'));
     }
-    pool.acquire(function(err, conn) {
+    pool.acquire(function (err, conn) {
       if (err) {
         pool.release(conn);
         return cb(err);
@@ -39,7 +39,7 @@ function redisStore(args) {
   function handleResponse(conn, cb, opts) {
     opts = opts || {};
 
-    return function(err, result) {
+    return function (err, result) {
       pool.release(conn);
 
       if (err) {
@@ -54,12 +54,12 @@ function redisStore(args) {
     };
   }
 
-  self.get = function(key, options, cb) {
+  self.get = function (key, options, cb) {
     if (typeof options === 'function') {
       cb = options;
     }
 
-    connect(function(err, conn) {
+    connect(function (err, conn) {
       if (err) {
         return cb(err);
       }
@@ -69,16 +69,17 @@ function redisStore(args) {
     });
   };
 
-  self.set = function(key, value, options, cb) {
+  self.set = function (key, value, options, cb) {
     if (typeof options === 'function') {
       cb = options;
       options = {};
     }
     options = options || {};
 
-    var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
+    var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions
+      .ttl;
 
-    connect(function(err, conn) {
+    connect(function (err, conn) {
       if (err) {
         return cb(err);
       }
@@ -92,13 +93,13 @@ function redisStore(args) {
     });
   };
 
-  self.del = function(key, options, cb) {
+  self.del = function (key, options, cb) {
     if (typeof options === 'function') {
       cb = options;
       options = {};
     }
 
-    connect(function(err, conn) {
+    connect(function (err, conn) {
       if (err) {
         return cb(err);
       }
@@ -106,8 +107,8 @@ function redisStore(args) {
     });
   };
 
-  self.ttl = function(key, cb) {
-    connect(function(err, conn) {
+  self.ttl = function (key, cb) {
+    connect(function (err, conn) {
       if (err) {
         return cb(err);
       }
@@ -115,13 +116,13 @@ function redisStore(args) {
     });
   };
 
-  self.keys = function(pattern, cb) {
+  self.keys = function (pattern, cb) {
     if (typeof pattern === 'function') {
       cb = pattern;
       pattern = '*';
     }
 
-    connect(function(err, conn) {
+    connect(function (err, conn) {
       if (err) {
         return cb(err);
       }
@@ -129,15 +130,11 @@ function redisStore(args) {
     });
   };
 
-  self.isCacheableValue = function(value) {
-    return value !== null && value !== undefined;
-  };
-
   return self;
 }
 
 module.exports = {
-  create: function(args) {
+  create: function (args) {
     return redisStore(args);
   }
 };
