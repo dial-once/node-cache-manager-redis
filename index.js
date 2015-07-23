@@ -14,7 +14,7 @@ function redisStore(args) {
   redisOptions.port = args.port || 6379;
 
   var pool = new RedisPool(redisOptions, poolSettings);
-  pool.on("error", function (error) {
+  pool.on("error", function () {
     redisConnError = true;
   });
 
