@@ -130,6 +130,10 @@ function redisStore(args) {
     });
   };
 
+  self.isCacheableValue = function(value) {
+    return value !== null && value !== undefined;
+  };
+
   return self;
 }
 
