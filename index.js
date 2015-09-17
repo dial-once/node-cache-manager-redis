@@ -107,6 +107,15 @@ function redisStore(args) {
     });
   };
 
+  self.reset = function(cb) {
+    connect(function (err, conn) {
+      if (err) {
+        return cb(err);
+      }
+      conn.flushdb(cb);
+    });
+  };
+
   self.ttl = function (key, cb) {
     connect(function (err, conn) {
       if (err) {
