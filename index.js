@@ -43,14 +43,16 @@ function redisStore(args) {
       pool.release(conn);
 
       if (err) {
-        return cb(err);
+        return cb && cb(err);
       }
 
       if (opts.parse) {
         result = JSON.parse(result);
       }
 
-      cb(null, result);
+      if (cb) {
+        cb(null, result);
+      }
     };
   }
 
@@ -61,7 +63,7 @@ function redisStore(args) {
 
     connect(function (err, conn) {
       if (err) {
-        return cb(err);
+        return cb && cb(err);
       }
       conn.get(key, handleResponse(conn, cb, {
         parse: true
@@ -76,12 +78,11 @@ function redisStore(args) {
     }
     options = options || {};
 
-    var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions
-      .ttl;
+    var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
 
     connect(function (err, conn) {
       if (err) {
-        return cb(err);
+        return cb && cb(err);
       }
       var val = JSON.stringify(value);
 
@@ -101,7 +102,7 @@ function redisStore(args) {
 
     connect(function (err, conn) {
       if (err) {
-        return cb(err);
+        return cb && cb(err);
       }
       conn.del(key, handleResponse(conn, cb));
     });
@@ -110,7 +111,7 @@ function redisStore(args) {
   self.reset = function(cb) {
     connect(function (err, conn) {
       if (err) {
-        return cb(err);
+        return cb && cb(err);
       }
       conn.flushdb(cb);
     });
@@ -119,7 +120,7 @@ function redisStore(args) {
   self.ttl = function (key, cb) {
     connect(function (err, conn) {
       if (err) {
-        return cb(err);
+        return cb && cb(err);
       }
       conn.ttl(key, handleResponse(conn, cb));
     });
@@ -133,7 +134,7 @@ function redisStore(args) {
 
     connect(function (err, conn) {
       if (err) {
-        return cb(err);
+        return cb && cb(err);
       }
       conn.keys(pattern, handleResponse(conn, cb));
     });
