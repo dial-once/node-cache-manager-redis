@@ -16,7 +16,7 @@
   "author": "Dial Once",
   "license": "MIT",
   "dependencies": {
-    "cache-manager": "^1.2.1",
+    "cache-manager": "^1.2.2",
     "sol-redis-pool": "^0.2.1"
   },
   "devDependencies": {
