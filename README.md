@@ -34,6 +34,12 @@ var redisCache = cacheManager.caching({
 
 var ttl = 5;
 
+// listen for redis connection error event
+redisCache.store.events.on('redisError', function(error) {
+	// handle error here
+	console.log(error);
+});
+
 redisCache.set('foo', 'bar', ttl, function(err) {
     if (err) {
       throw err;

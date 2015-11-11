@@ -1,6 +1,7 @@
 'use strict';
 
 var RedisPool = require('sol-redis-pool');
+var EventEmitter = require('events').EventEmitter;
 
 function redisStore(args) {
   var self = {
@@ -8,20 +9,17 @@ function redisStore(args) {
   };
   var redisOptions = args || {};
   var poolSettings = redisOptions;
-  var redisConnError = false;
+  self.events = new EventEmitter();
 
   redisOptions.host = args.host || '127.0.0.1';
   redisOptions.port = args.port || 6379;
 
   var pool = new RedisPool(redisOptions, poolSettings);
-  pool.on("error", function () {
-    redisConnError = true;
+  pool.on("error", function(err) {
+    self.events.emit("redisError", err);
   });
 
   function connect(cb) {
-    if (redisConnError) {
-      return cb(new Error('Redis connection error'));
-    }
     pool.acquire(function (err, conn) {
       if (err) {
         pool.release(conn);
