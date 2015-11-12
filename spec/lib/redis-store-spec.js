@@ -83,3 +83,17 @@ describe('del', function() {
     });
   });
 });
+
+describe('reset', function() {
+  it('should flush underlying db', function(done){
+    redisCache.reset(function(err) {
+      expect(err).toBe(null);
+      done();
+    });
+  });
+
+  it('should flush underlying db without callback', function(done){
+    redisCache.reset();
+    done();
+  });
+});
