@@ -117,3 +117,27 @@ describe('ttl', function() {
     });
   });
 });
+
+describe('keys', function() {
+  it('should return an array of keys for the given pattern', function(done){
+    redisCache.set('foo', 'bar', function() {
+      redisCache.keys('f*', function(err, arrayOfKeys) {
+        expect(err).toBe(null);
+        expect(arrayOfKeys).not.toBe(null);
+        expect(arrayOfKeys.indexOf('foo')).not.toBe(-1);
+        done();
+      });
+    });
+  });
+
+  it('should return an array of keys without pattern', function(done){
+    redisCache.set('foo', 'bar', function() {
+      redisCache.keys(function(err, arrayOfKeys) {
+        expect(err).toBe(null);
+        expect(arrayOfKeys).not.toBe(null);
+        expect(arrayOfKeys.indexOf('foo')).not.toBe(-1);
+        done();
+      });
+    });
+  });
+});
