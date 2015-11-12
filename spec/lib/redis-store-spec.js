@@ -60,6 +60,7 @@ describe('get', function() {
 
   it('should return null when the key is invalid', function(done){
     redisCache.get('invalidKey', function(err, result) {
+      expect(err).toBe(null);
       expect(result).toBe(null);
       done();
     });
