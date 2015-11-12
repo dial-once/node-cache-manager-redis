@@ -158,3 +158,13 @@ describe('isCacheableValue', function() {
   });
 });
 
+describe('getClient', function() {
+  it('should return redis client', function(done) {
+    redisCache.store.getClient(function(err, redis) {
+      expect(err).toBe(null);
+      expect(redis).not.toBe(null);
+      expect(redis.client).not.toBe(null);
+      redis.done(done);
+    });
+  });
+});
