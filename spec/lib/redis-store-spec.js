@@ -97,3 +97,23 @@ describe('reset', function() {
     done();
   });
 });
+
+describe('ttl', function() {
+  it('should retrieve ttl for a given key', function(done){
+    redisCache.set('foo', 'bar', function() {
+      redisCache.ttl('foo', function(err, ttl) {
+        expect(err).toBe(null);
+        expect(ttl).toBe(config.redis.ttl);
+        done();
+      });
+    });
+  });
+
+  it('should retrieve ttl for an invalid key', function(done){
+    redisCache.ttl('invalidKey', function(err, ttl){
+      expect(err).toBe(null);
+      expect(ttl).not.toBe(null);
+      done(); 
+    });
+  });
+});
