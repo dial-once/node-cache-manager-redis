@@ -65,3 +65,21 @@ describe('get', function() {
     });
   });
 });
+
+describe('del', function() {
+  it('should delete a value for a given key', function(done){
+    redisCache.set('foo', 'bar', function() {
+      redisCache.del('foo', function(err) {
+        expect(err).toBe(null);
+        done();
+      });
+    });
+  });
+
+  it('should delete a value for a given key without callback', function(done){
+    redisCache.set('foo', 'bar', function() {
+      redisCache.del('foo');
+      done();
+    });
+  });
+});
