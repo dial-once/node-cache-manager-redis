@@ -142,6 +142,22 @@ function redisStore(args) {
     return value !== null && value !== undefined;
   };
 
+  self.getClient = function(cb) {
+    connect(function (err, conn) {
+      if (err) {
+        return cb && cb(err);
+      }
+      cb(null, {
+        client: conn,
+        done: function(done) {
+          var args = Array.prototype.slice.call(arguments, 1);
+          pool.release(conn);
+          if (done && typeof done === 'function') done.apply(null, args);
+        }
+      });
+    });
+  };
+
   return self;
 }
 
