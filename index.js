@@ -15,8 +15,9 @@ function redisStore(args) {
   redisOptions.port = args.port || 6379;
 
   var pool = new RedisPool(redisOptions, poolSettings);
-  pool.on("error", function(err) {
-    self.events.emit("redisError", err);
+
+  pool.on('error', function(err) {
+    self.events.emit('redisError', err);
   });
 
   function connect(cb) {
@@ -63,6 +64,7 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
+
       conn.get(key, handleResponse(conn, cb, {
         parse: true
       }));
@@ -152,7 +154,10 @@ function redisStore(args) {
         done: function(done) {
           var args = Array.prototype.slice.call(arguments, 1);
           pool.release(conn);
-          if (done && typeof done === 'function') done.apply(null, args);
+          
+          if (done && typeof done === 'function') {
+            done.apply(null, args);
+          }
         }
       });
     });
