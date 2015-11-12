@@ -141,3 +141,20 @@ describe('keys', function() {
     });
   });
 });
+
+describe('isCacheableValue', function() {
+  it('should return true when the value is not null or undefined', function(done){
+    expect(redisCache.store.isCacheableValue(0)).toBe(true);
+    expect(redisCache.store.isCacheableValue(100)).toBe(true);
+    expect(redisCache.store.isCacheableValue('')).toBe(true);
+    expect(redisCache.store.isCacheableValue('test')).toBe(true);
+    done();
+  });
+
+  it('should return false when the value is null or undefined', function(done){
+    expect(redisCache.store.isCacheableValue(null)).toBe(false);
+    expect(redisCache.store.isCacheableValue(undefined)).toBe(false);
+    done();
+  });
+});
+
