@@ -45,3 +45,23 @@ describe('set', function() {
     done();
   });
 });
+
+describe('get', function() {
+  it('should retrieve a value for a given key', function(done){
+    var value = 'bar';
+    redisCache.set('foo', value, function() {
+      redisCache.get('foo', function(err, result) {
+        expect(err).toBe(null);
+        expect(result).toBe(value);
+        done();
+      });
+    });
+  });
+
+  it('should return null when the key is invalid', function(done){
+    redisCache.get('invalidKey', function(err, result) {
+      expect(result).toBe(null);
+      done();
+    });
+  });
+});
