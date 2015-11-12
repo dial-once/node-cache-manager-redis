@@ -113,7 +113,7 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      conn.flushdb(cb);
+      conn.flushdb(handleResponse(conn, cb));
     });
   };
 
