@@ -1,0 +1,9 @@
+{
+	"redis": {
+		"host": "localhost",
+		"port": 6379,
+		"auth_pass": "",
+		"db": 0,
+		"ttl": 60
+	}
+}

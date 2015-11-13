@@ -1,20 +1,19 @@
 {
   "node": true,
-  "browser": true,
+  "jasmine": true,
+  "curly": false,
+  "quotmark": "single",
+  "maxcomplexity": 8,
   "esnext": true,
-  "bitwise": true,
-  "curly": true,
-  "eqeqeq": true,
-  "immed": true,
-  "indent": 2,
-  "latedef": true,
-  "newcap": true,
-  "noarg": true,
-  "quotmark": false,
-  "regexp": true,
-  "undef": true,
   "unused": true,
-  "strict": true,
-  "trailing": true,
-  "smarttabs": true
+  "globals": {
+    "after": true,
+    "afterEach": true,
+    "assert": true,
+    "before": true,
+    "beforeEach": true,
+    "describe": true,
+    "expect": true,
+    "it": true
+  }
 }
