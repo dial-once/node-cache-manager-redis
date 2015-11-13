@@ -5,11 +5,12 @@ var EventEmitter = require('events').EventEmitter;
 
 function redisStore(args) {
   var self = {
-    name: 'redis'
+    name: 'redis',
+    events: new EventEmitter()
   };
+
   var redisOptions = args || {};
   var poolSettings = redisOptions;
-  self.events = new EventEmitter();
 
   redisOptions.host = args.host || '127.0.0.1';
   redisOptions.port = args.port || 6379;
@@ -21,7 +22,7 @@ function redisStore(args) {
   });
 
   function connect(cb) {
-    pool.acquire(function (err, conn) {
+    pool.acquire(function(err, conn) {
       if (err) {
         pool.release(conn);
         return cb(err);
@@ -38,7 +39,7 @@ function redisStore(args) {
   function handleResponse(conn, cb, opts) {
     opts = opts || {};
 
-    return function (err, result) {
+    return function(err, result) {
       pool.release(conn);
 
       if (err) {
@@ -55,12 +56,12 @@ function redisStore(args) {
     };
   }
 
-  self.get = function (key, options, cb) {
+  self.get = function(key, options, cb) {
     if (typeof options === 'function') {
       cb = options;
     }
 
-    connect(function (err, conn) {
+    connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
@@ -71,7 +72,7 @@ function redisStore(args) {
     });
   };
 
-  self.set = function (key, value, options, cb) {
+  self.set = function(key, value, options, cb) {
     if (typeof options === 'function') {
       cb = options;
       options = {};
@@ -80,7 +81,7 @@ function redisStore(args) {
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
 
-    connect(function (err, conn) {
+    connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
@@ -94,13 +95,13 @@ function redisStore(args) {
     });
   };
 
-  self.del = function (key, options, cb) {
+  self.del = function(key, options, cb) {
     if (typeof options === 'function') {
       cb = options;
       options = {};
     }
 
-    connect(function (err, conn) {
+    connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
@@ -109,7 +110,7 @@ function redisStore(args) {
   };
 
   self.reset = function(cb) {
-    connect(function (err, conn) {
+    connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
@@ -117,8 +118,8 @@ function redisStore(args) {
     });
   };
 
-  self.ttl = function (key, cb) {
-    connect(function (err, conn) {
+  self.ttl = function(key, cb) {
+    connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
@@ -126,13 +127,13 @@ function redisStore(args) {
     });
   };
 
-  self.keys = function (pattern, cb) {
+  self.keys = function(pattern, cb) {
     if (typeof pattern === 'function') {
       cb = pattern;
       pattern = '*';
     }
 
-    connect(function (err, conn) {
+    connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
@@ -145,7 +146,7 @@ function redisStore(args) {
   };
 
   self.getClient = function(cb) {
-    connect(function (err, conn) {
+    connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
@@ -154,7 +155,7 @@ function redisStore(args) {
         done: function(done) {
           var args = Array.prototype.slice.call(arguments, 1);
           pool.release(conn);
-          
+
           if (done && typeof done === 'function') {
             done.apply(null, args);
           }
@@ -167,7 +168,7 @@ function redisStore(args) {
 }
 
 module.exports = {
-  create: function (args) {
+  create: function(args) {
     return redisStore(args);
   }
 };
