@@ -4,6 +4,7 @@ var redisStore = require('../../index');
 
 var redisCache;
 
+
 beforeAll(function() {
   redisCache = require('cache-manager').caching({
     store: redisStore,
@@ -166,6 +167,24 @@ describe('getClient', function() {
       expect(redis).not.toBe(null);
       expect(redis.client).not.toBe(null);
       redis.done(done);
+    });
+  });
+});
+
+describe('redisErrorEventEmitter', function(){
+  it('should return an error when the redis server is unavailable', function(done){
+    // Change redisCache host to receive an error
+    redisCache = require('cache-manager').caching({
+      store: redisStore,
+      host: '127.0.0.10',
+      port: config.redis.port, 
+      db: config.redis.db,
+      connect_timeout: 1
+    });
+
+    redisCache.set('foo', 'bar', function(err) {
+      expect(err).not.toBe(null);
+      done();
     });
   });
 });
