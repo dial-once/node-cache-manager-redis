@@ -1,7 +1,7 @@
 Node Cache Manager store for Redis
 ==================================
 
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/716e18e668de44bb8124bedc2816a704)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/716e18e668de44bb8124bedc2816a704)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Dependency Status](https://david-dm.org/dial-once/node-cache-manager-redis.svg)](https://david-dm.org/dial-once/node-cache-manager-redis)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/3d5933f95c88472d9075dc302c8d62e1)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/3d5933f95c88472d9075dc302c8d62e1)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Dependency Status](https://david-dm.org/dial-once/node-cache-manager-redis.svg)](https://david-dm.org/dial-once/node-cache-manager-redis)
 
 The Redis store for the [node-cache-manager](https://github.com/BryanDonovan/node-cache-manager) module.
 
