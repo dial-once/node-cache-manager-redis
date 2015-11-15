@@ -28,6 +28,7 @@
     "codacy-coverage": "^1.1.3",
     "istanbul": "^0.4.0",
     "jasmine": "^2.3.2",
-    "jshint": "^2.8.0"
+    "jshint": "^2.8.0",
+    "sinon": "^1.17.2"
   }
 }

@@ -9,6 +9,8 @@ function redisStore(args) {
     events: new EventEmitter()
   };
 
+  // cache-manager should always pass in args
+  /* istanbul ignore next */
   var redisOptions = args || {};
   var poolSettings = redisOptions;
 
@@ -28,6 +30,7 @@ function redisStore(args) {
         return cb(err);
       }
 
+      /* istanbul ignore else */
       if (args.db || args.db === 0) {
         conn.select(args.db);
       }
@@ -163,6 +166,12 @@ function redisStore(args) {
       });
     });
   };
+
+  /**
+   * Expose the raw pool object for testing purposes
+   * @private
+   */
+  self._pool = pool;
 
   return self;
 }
