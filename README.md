@@ -1,7 +1,7 @@
 Node Cache Manager store for Redis
 ==================================
 
-[![Codacy Badge](https://img.shields.io/codacy/5b2c2727618c4acb8d06db34c2f61c03.svg)](https://www.codacy.com/public/dialonce/node-cache-manager-redis) [![Dependency Status](https://david-dm.org/dial-once/node-cache-manager-redis.svg)](https://david-dm.org/dial-once/node-cache-manager-redis)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/716e18e668de44bb8124bedc2816a704)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/716e18e668de44bb8124bedc2816a704)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Dependency Status](https://david-dm.org/dial-once/node-cache-manager-redis.svg)](https://david-dm.org/dial-once/node-cache-manager-redis)
 
 The Redis store for the [node-cache-manager](https://github.com/BryanDonovan/node-cache-manager) module.
 
@@ -124,10 +124,18 @@ multiCache.wrap(key2, function (cb) {
 });
 ```
 
+Tests
+-----
+
+1. Run a Redis server
+2. Run tests `npm test` or `npm run coverage`
+
+
 Contribution
 ------------
 
-If you would like to contribute to the project, please fork it and send us a pull request.
+If you would like to contribute to the project, please fork it and send us a pull request. Please add tests for any new features or bug fixes. Also make sure the code coverage is not impacted.
+
 
 License
 -------
