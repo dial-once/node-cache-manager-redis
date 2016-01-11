@@ -10,6 +10,7 @@ var EventEmitter = require('events').EventEmitter;
  * @param {String} args.host - The Redis server host
  * @param {Number} args.port - The Redis server port
  * @param {Number} args.db - The Redis server db
+ * @param {function} args.isCacheableValue - function to override built-in isCacheableValue function (optional)
  */
 function redisStore(args) {
   var self = {
@@ -208,11 +209,12 @@ function redisStore(args) {
    * Specify which values should and should not be cached.
    * If the function returns true, it will be stored in cache.
    * By default, it caches everything except null and undefined values.
+   * Can be overriden via standard node-cache-manager options.
    * @method isCacheableValue
    * @param {String} value - The value to check
    * @return {Boolean} - Returns true if the value is cacheable, otherwise false.
    */
-  self.isCacheableValue = function(value) {
+  self.isCacheableValue = args.isCacheableValue || function(value) {
     return value !== null && value !== undefined;
   };
 
