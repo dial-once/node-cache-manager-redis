@@ -293,6 +293,22 @@ describe('redisErrorEvent', function() {
   });
 });
 
+describe('overridable isCacheableValue function', function() {
+  var redisCache2;
+
+  beforeAll(function() {
+    redisCache2 = require('cache-manager').caching({
+      store: redisStore,
+      isCacheableValue: function() {return 'I was overridden';}
+    });
+  });
+
+  it('should return its return value instead of the built-in function', function(done) {
+    expect(redisCache2.store.isCacheableValue(0)).toBe('I was overridden');
+    done();
+  });
+});
+
 describe('defaults', function() {
   var redisCache2;
 
