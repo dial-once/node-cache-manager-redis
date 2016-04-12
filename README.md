@@ -5,6 +5,12 @@ Node Cache Manager store for Redis
 
 The Redis store for the [node-cache-manager](https://github.com/BryanDonovan/node-cache-manager) module.
 
+Changes on original repo
+------------
+
+- Remove `redis-pool` which is not necessary. See https://github.com/NodeRedis/node_redis/issues/226
+- Use `mget` command to merge redis requests.
+
 Installation
 ------------
 
