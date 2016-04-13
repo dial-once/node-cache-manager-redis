@@ -262,6 +262,31 @@ describe('multi get', function () {
       done();
     }, done);
   });
+
+  it('should pause worker if no get request', function (done) {
+    Promise.map(['foo', 'foo1'], function (key) {
+      return new Promise(function (resolve, reject) {
+        redisCache.get(key, function (err, value) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(value);
+          }
+        });
+      });
+    }).then(function (values) {
+      // worker started, got result
+      expect(values.length).toBe(2);
+      expect(values).toContain('bar');
+      expect(values).toContain(null);
+
+      return Promise.delay(100).then(function () {
+        expect(redisCache.store._workerRunning).toBe(false);
+        done();
+      })
+    });
+  });
+
 });
 
 

@@ -31,20 +31,23 @@ function redisStore(args) {
   });
 
   var requestQueue = {};
-
-  setImmediate(fulfillRequests);
+  self._workerRunning = false;
 
   function addRequest(keys, cb) {
     keys.forEach(function (key) {
       requestQueue[key] = requestQueue[key] || [];
       requestQueue[key].push(cb);
     });
+    if (!self._workerRunning) {
+      self._workerRunning = true;
+      setImmediate(fulfillRequests);
+    }
   }
 
   function fulfillRequests() {
     var keys = Object.keys(requestQueue);
     if (!keys.length) {
-      setImmediate(fulfillRequests);
+      self._workerRunning = false;
       return;
     }
     conn.mget(keys, function (err, values) {

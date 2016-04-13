@@ -15,7 +15,7 @@ Installation
 ------------
 
 ```sh
-npm install cache-manager-redis --save
+npm install cache-manager-store-redis --save
 ```
 
 Usage examples
