@@ -9,6 +9,7 @@ beforeAll(function() {
     store: redisStore,
     host: config.redis.host,
     port: config.redis.port,
+    auth_pass: config.redis.auth_pass,
     db: config.redis.db,
     ttl: config.redis.ttl
   });
