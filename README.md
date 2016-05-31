@@ -5,11 +5,17 @@ Node Cache Manager store for Redis
 
 The Redis store for the [node-cache-manager](https://github.com/BryanDonovan/node-cache-manager) module.
 
+Changes on original repo
+------------
+
+- Remove `redis-pool` which is not necessary. See https://github.com/NodeRedis/node_redis/issues/226
+- Use `mget` command to merge redis requests.
+
 Installation
 ------------
 
 ```sh
-npm install cache-manager-redis --save
+npm install cache-manager-store-redis --save
 ```
 
 Usage examples
@@ -21,7 +27,7 @@ Here are examples that demonstrate how to implement the Redis cache store.
 
 ```js
 var cacheManager = require('cache-manager');
-var redisStore = require('cache-manager-redis');
+var redisStore = require('cache-manager-store-redis');
 
 var redisCache = cacheManager.caching({
 	store: redisStore,
@@ -81,7 +87,7 @@ redisCache.wrap(key, function (cb) {
 
 ```js
 var cacheManager = require('cache-manager');
-var redisStore = require('cache-manager-redis');
+var redisStore = require('cache-manager-store-redis');
 
 var redisCache = cacheManager.caching({store: redisStore, db: 0, ttl: 600});
 var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 60});
@@ -140,4 +146,4 @@ If you would like to contribute to the project, please fork it and send us a pul
 License
 -------
 
-`node-cache-manager-redis` is licensed under the MIT license.
+`node-cache-manager-store-redis` is licensed under the MIT license.

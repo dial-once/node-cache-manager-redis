@@ -1,6 +1,6 @@
 'use strict';
 
-var RedisPool = require('sol-redis-pool');
+var redis = require('redis');
 var EventEmitter = require('events').EventEmitter;
 
 /**
@@ -21,51 +21,66 @@ function redisStore(args) {
   // cache-manager should always pass in args
   /* istanbul ignore next */
   var redisOptions = args || {};
-  var poolSettings = redisOptions;
 
   redisOptions.host = args.host || '127.0.0.1';
   redisOptions.port = args.port || 6379;
 
-  var pool = new RedisPool(redisOptions, poolSettings);
-
-  pool.on('error', function(err) {
+  var conn = redis.createClient(redisOptions.port, redisOptions.host, redisOptions);
+  conn.on('error', function (err) {
     self.events.emit('redisError', err);
   });
 
-  /**
-   * Helper to connect to a connection pool
-   * @private
-   * @param {Function} cb - A callback that returns
-   */
-  function connect(cb) {
-    pool.acquire(function(err, conn) {
+  var requestQueue = {};
+  self._workerRunning = false;
+
+  function addRequest(keys, cb) {
+    keys.forEach(function (key) {
+      requestQueue[key] = requestQueue[key] || [];
+      requestQueue[key].push(cb);
+    });
+    if (!self._workerRunning) {
+      self._workerRunning = true;
+      setImmediate(fulfillRequests);
+    }
+  }
+
+  function fulfillRequests() {
+    var keys = Object.keys(requestQueue);
+    if (!keys.length) {
+      self._workerRunning = false;
+      return;
+    }
+    conn.mget(keys, function (err, values) {
       if (err) {
-        pool.release(conn);
-        return cb(err);
+        console.error("Redis MGET error", err);
+        setImmediate(fulfillRequests);
+        return;
       }
-
-      /* istanbul ignore else */
-      if (args.db || args.db === 0) {
-        conn.select(args.db);
+      try {
+        keys.forEach(function (key, i) {
+          var cbs = requestQueue[key];
+          delete requestQueue[key];
+          cbs.forEach(function (cb) {
+            cb(err, values[i]);
+          });
+        });
+      } catch (e) {
+        console.error("Error handling mget result", e);
       }
-
-      cb(null, conn);
+      setImmediate(fulfillRequests);
     });
   }
 
   /**
    * Helper to handle callback and release the connection
    * @private
-   * @param {Object} conn - The Redis connection
-   * @param {Function} [cb] - A callback that returns a potential error and the resoibse
+   * @param {Function} [cb] - A callback that returns a potential error and the response
    * @param {Object} [opts] - The options (optional)
    */
-  function handleResponse(conn, cb, opts) {
+  function handleResponse(cb, opts) {
     opts = opts || {};
 
-    return function(err, result) {
-      pool.release(conn);
-
+    return function (err, result) {
       if (err) {
         return cb && cb(err);
       }
@@ -87,20 +102,14 @@ function redisStore(args) {
    * @param {Object} [options] - The options (optional)
    * @param {Function} cb - A callback that returns a potential error and the response
    */
-  self.get = function(key, options, cb) {
+  self.get = function (key, options, cb) {
     if (typeof options === 'function') {
       cb = options;
     }
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-
-      conn.get(key, handleResponse(conn, cb, {
-        parse: true
-      }));
-    });
+    addRequest([key], handleResponse(cb, {
+      parse: true
+    }));
   };
 
   /**
@@ -112,7 +121,7 @@ function redisStore(args) {
    * @param {Object} options.ttl - The ttl value
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
-  self.set = function(key, value, options, cb) {
+  self.set = function (key, value, options, cb) {
     if (typeof options === 'function') {
       cb = options;
       options = {};
@@ -121,18 +130,13 @@ function redisStore(args) {
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      var val = JSON.stringify(value);
+    var val = JSON.stringify(value);
 
-      if (ttl) {
-        conn.setex(key, ttl, val, handleResponse(conn, cb));
-      } else {
-        conn.set(key, val, handleResponse(conn, cb));
-      }
-    });
+    if (ttl) {
+      conn.setex(key, ttl, val, handleResponse(cb));
+    } else {
+      conn.set(key, val, handleResponse(cb));
+    }
   };
 
   /**
@@ -142,18 +146,13 @@ function redisStore(args) {
    * @param {Object} [options] - The options (optional)
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
-  self.del = function(key, options, cb) {
+  self.del = function (key, options, cb) {
     if (typeof options === 'function') {
       cb = options;
       options = {};
     }
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      conn.del(key, handleResponse(conn, cb));
-    });
+    conn.del(key, handleResponse(cb));
   };
 
   /**
@@ -161,13 +160,8 @@ function redisStore(args) {
    * @method reset
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
-  self.reset = function(cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      conn.flushdb(handleResponse(conn, cb));
-    });
+  self.reset = function (cb) {
+    conn.flushdb(handleResponse(cb));
   };
 
   /**
@@ -176,13 +170,8 @@ function redisStore(args) {
    * @param {String} key - The cache key
    * @param {Function} cb - A callback that returns a potential error and the response
    */
-  self.ttl = function(key, cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      conn.ttl(key, handleResponse(conn, cb));
-    });
+  self.ttl = function (key, cb) {
+    conn.ttl(key, handleResponse(cb));
   };
 
   /**
@@ -191,18 +180,13 @@ function redisStore(args) {
    * @param {String} pattern - The pattern used to match keys
    * @param {Function} cb - A callback that returns a potential error and the response
    */
-  self.keys = function(pattern, cb) {
+  self.keys = function (pattern, cb) {
     if (typeof pattern === 'function') {
       cb = pattern;
       pattern = '*';
     }
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      conn.keys(pattern, handleResponse(conn, cb));
-    });
+    conn.keys(pattern, handleResponse(cb));
   };
 
   /**
@@ -214,45 +198,34 @@ function redisStore(args) {
    * @param {String} value - The value to check
    * @return {Boolean} - Returns true if the value is cacheable, otherwise false.
    */
-  self.isCacheableValue = args.isCacheableValue || function(value) {
-    return value !== null && value !== undefined;
-  };
+  self.isCacheableValue = args.isCacheableValue || function (value) {
+      return value !== null && value !== undefined;
+    };
 
   /**
    * Returns the underlying redis client connection
    * @method getClient
    * @param {Function} cb - A callback that returns a potential error and an object containing the Redis client and a done method
    */
-  self.getClient = function(cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      cb(null, {
-        client: conn,
-        done: function(done) {
-          var args = Array.prototype.slice.call(arguments, 1);
-          pool.release(conn);
+  self.getClient = function (cb) {
 
-          if (done && typeof done === 'function') {
-            done.apply(null, args);
-          }
+    cb(null, {
+      client: conn,
+      done: function (done) {
+        var args = Array.prototype.slice.call(arguments, 1);
+
+        if (done && typeof done === 'function') {
+          done.apply(null, args);
         }
-      });
+      }
     });
   };
-
-  /**
-   * Expose the raw pool object for testing purposes
-   * @private
-   */
-  self._pool = pool;
 
   return self;
 }
 
 module.exports = {
-  create: function(args) {
+  create: function (args) {
     return redisStore(args);
   }
 };

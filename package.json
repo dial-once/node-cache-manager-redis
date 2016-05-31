@@ -1,6 +1,6 @@
 {
-  "name": "cache-manager-redis",
-  "version": "0.2.2",
+  "name": "cache-manager-store-redis",
+  "version": "0.1.1",
   "description": "Redis store for the node-cache-manager",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dial-once/node-cache-manager-redis.git"
+    "url": "https://github.com/ruguoapp/node-cache-manager-redis.git"
   },
   "keywords": [
     "cache",
@@ -19,13 +19,13 @@
     "cache manager",
     "multiple cache"
   ],
-  "author": "Dial Once",
+  "author": "themez",
   "license": "MIT",
   "dependencies": {
-    "cache-manager": "^1.2.2",
-    "sol-redis-pool": "^0.2.1"
+    "cache-manager": "^1.2.2"
   },
   "devDependencies": {
+    "bluebird": "^3.3.4",
     "codacy-coverage": "^1.1.3",
     "istanbul": "^0.4.0",
     "jasmine": "^2.3.2",
