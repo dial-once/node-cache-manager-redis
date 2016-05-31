@@ -27,7 +27,7 @@ Here are examples that demonstrate how to implement the Redis cache store.
 
 ```js
 var cacheManager = require('cache-manager');
-var redisStore = require('cache-manager-redis');
+var redisStore = require('cache-manager-store-redis');
 
 var redisCache = cacheManager.caching({
 	store: redisStore,
@@ -87,7 +87,7 @@ redisCache.wrap(key, function (cb) {
 
 ```js
 var cacheManager = require('cache-manager');
-var redisStore = require('cache-manager-redis');
+var redisStore = require('cache-manager-store-redis');
 
 var redisCache = cacheManager.caching({store: redisStore, db: 0, ttl: 600});
 var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 60});
@@ -146,4 +146,4 @@ If you would like to contribute to the project, please fork it and send us a pul
 License
 -------
 
-`node-cache-manager-redis` is licensed under the MIT license.
+`node-cache-manager-store-redis` is licensed under the MIT license.
