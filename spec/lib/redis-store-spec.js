@@ -50,13 +50,30 @@ describe('set', function() {
   });
 
   it('should not store an invalid value', function(done) {
-    redisCache.set('foo1', undefined, function(){
-      redisCache.get('foo1', function(err, value) {
+    redisCache.set('foo1', undefined, function(err){
+      try {
+        expect(err).notToBe(null);
+        expect(err.message).toEqual('value cannot be undefined');
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+  });
+});
+
+it('should  store a null value without error', function(done) {
+  redisCache.set('foo2', null, function(err){
+    try {
+      expect(err).toBe(null);
+      redisCache.get('foo2', function(err, value) {
         expect(err).toBe(null);
         expect(value).toBe(null);
         done();
       });
-    });
+    } catch (e) {
+      done(e);
+    }
   });
 });
 

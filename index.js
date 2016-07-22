@@ -71,7 +71,12 @@ function redisStore(args) {
       }
 
       if (opts.parse) {
-        result = JSON.parse(result);
+
+        try {
+          result = JSON.parse(result);
+        } catch (e) {
+          return cb && cb(e);
+        }
       }
 
       if (cb) {
@@ -113,10 +118,16 @@ function redisStore(args) {
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
   self.set = function(key, value, options, cb) {
+
     if (typeof options === 'function') {
       cb = options;
       options = {};
     }
+
+    if (value === undefined) {
+      return cb && cb(new Error('value cannot be undefined'));
+    }
+
     options = options || {};
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
@@ -126,7 +137,6 @@ function redisStore(args) {
         return cb && cb(err);
       }
       var val = JSON.stringify(value);
-
       if (ttl) {
         conn.setex(key, ttl, val, handleResponse(conn, cb));
       } else {
