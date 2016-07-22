@@ -138,7 +138,7 @@ function redisStore(args) {
   /**
    * Delete value of a given key
    * @method del
-   * @param {String} key - The cache key
+   * @param {String\Array} key - The cache key
    * @param {Object} [options] - The options (optional)
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
@@ -152,7 +152,20 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      conn.del(key, handleResponse(conn, cb));
+
+      var args = []
+
+      if ( Object.prototype.toString.call( key ) === '[object Array]' ) {
+        key.forEach(function(k) {
+          args.push(k);
+        });
+
+      }else{
+        args.push(key);
+      }  
+
+      args.push(handleResponse(conn, cb));
+      conn.del.apply(conn, args);
     });
   };
 
