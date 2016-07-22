@@ -138,7 +138,7 @@ function redisStore(args) {
   /**
    * Delete value of a given key
    * @method del
-   * @param {String\Array} key - The cache key
+   * @param {String|Array} key - The cache key
    * @param {Object} [options] - The options (optional)
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
