@@ -57,7 +57,7 @@ function redisStore(args) {
    * Helper to handle callback and release the connection
    * @private
    * @param {Object} conn - The Redis connection
-   * @param {Function} [cb] - A callback that returns a potential error and the resoibse
+   * @param {Function} [cb] - A callback that returns a potential error and the result
    * @param {Object} [opts] - The options (optional)
    */
   function handleResponse(conn, cb, opts) {
@@ -73,7 +73,10 @@ function redisStore(args) {
       if (opts.parse) {
 
         try {
-          result = JSON.parse(result);
+          // allow undefined only if allowed by isCacheableValue
+          if(! ( (result === undefined || result === "undefined") && typeof args.isCacheableValue === 'function' && args.isCacheableValue(result))) {
+            result = JSON.parse(result);
+          }
         } catch (e) {
           return cb && cb(e);
         }
@@ -122,10 +125,6 @@ function redisStore(args) {
     if (typeof options === 'function') {
       cb = options;
       options = {};
-    }
-
-    if (value === undefined) {
-      return cb && cb(new Error('value cannot be undefined'));
     }
 
     options = options || {};
