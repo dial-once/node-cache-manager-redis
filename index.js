@@ -57,7 +57,7 @@ function redisStore(args) {
    * Helper to handle callback and release the connection
    * @private
    * @param {Object} conn - The Redis connection
-   * @param {Function} [cb] - A callback that returns a potential error and the resoibse
+   * @param {Function} [cb] - A callback that returns a potential error and the result
    * @param {Object} [opts] - The options (optional)
    */
   function handleResponse(conn, cb, opts) {
@@ -71,7 +71,15 @@ function redisStore(args) {
       }
 
       if (opts.parse) {
-        result = JSON.parse(result);
+
+        try {
+          // allow undefined only if allowed by isCacheableValue
+          if(! ( (result === undefined || result === "undefined") && typeof args.isCacheableValue === 'function' && args.isCacheableValue(result))) {
+            result = JSON.parse(result);
+          }
+        } catch (e) {
+          return cb && cb(e);
+        }
       }
 
       if (cb) {
@@ -113,10 +121,12 @@ function redisStore(args) {
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
   self.set = function(key, value, options, cb) {
+
     if (typeof options === 'function') {
       cb = options;
       options = {};
     }
+
     options = options || {};
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
@@ -126,7 +136,6 @@ function redisStore(args) {
         return cb && cb(err);
       }
       var val = JSON.stringify(value);
-
       if (ttl) {
         conn.setex(key, ttl, val, handleResponse(conn, cb));
       } else {
