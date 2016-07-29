@@ -26,6 +26,7 @@ function redisStore(args) {
 
   redisOptions.host = redisOptions.host || '127.0.0.1';
   redisOptions.port = redisOptions.port || 6379;
+  redisOptions.db = redisOptions.db || 0;
 
   var pool = new RedisPool(redisOptions, poolSettings);
 
@@ -39,19 +40,7 @@ function redisStore(args) {
    * @param {Function} cb - A callback that returns
    */
   function connect(cb) {
-    pool.acquire(function(err, conn) {
-      if (err) {
-        pool.release(conn);
-        return cb(err);
-      }
-
-      /* istanbul ignore else */
-      if (args.db || args.db === 0) {
-        conn.select(args.db);
-      }
-
-      cb(null, conn);
-    });
+    pool.acquireDb(cb, redisOptions.db);
   }
 
   /**
