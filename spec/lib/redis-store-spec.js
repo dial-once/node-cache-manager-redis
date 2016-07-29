@@ -146,10 +146,10 @@ describe('get', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquire').yieldsAsync('Something unexpected');
+    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
     sinon.stub(pool, 'release');
     redisCache.get('foo', function (err) {
-      pool.acquire.restore();
+      pool.acquireDb.restore();
       pool.release.restore();
       expect(err).not.toBe(null);
       done();
@@ -176,11 +176,11 @@ describe('del', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquire').yieldsAsync('Something unexpected');
+    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
     sinon.stub(pool, 'release');
     redisCache.set('foo', 'bar', function () {
       redisCache.del('foo', function (err) {
-        pool.acquire.restore();
+        pool.acquireDb.restore();
         pool.release.restore();
         expect(err).not.toBe(null);
         done();
@@ -204,10 +204,10 @@ describe('reset', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquire').yieldsAsync('Something unexpected');
+    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
     sinon.stub(pool, 'release');
     redisCache.reset(function (err) {
-      pool.acquire.restore();
+      pool.acquireDb.restore();
       pool.release.restore();
       expect(err).not.toBe(null);
       done();
@@ -236,11 +236,11 @@ describe('ttl', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquire').yieldsAsync('Something unexpected');
+    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
     sinon.stub(pool, 'release');
     redisCache.set('foo', 'bar', function () {
       redisCache.ttl('foo', function (err) {
-        pool.acquire.restore();
+        pool.acquireDb.restore();
         pool.release.restore();
         expect(err).not.toBe(null);
         done();
@@ -274,11 +274,11 @@ describe('keys', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquire').yieldsAsync('Something unexpected');
+    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
     sinon.stub(pool, 'release');
     redisCache.set('foo', 'bar', function () {
       redisCache.keys('f*', function (err) {
-        pool.acquire.restore();
+        pool.acquireDb.restore();
         pool.release.restore();
         expect(err).not.toBe(null);
         done();
@@ -325,10 +325,10 @@ describe('getClient', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquire').yieldsAsync('Something unexpected');
+    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
     sinon.stub(pool, 'release');
     redisCache.store.getClient(function (err) {
-      pool.acquire.restore();
+      pool.acquireDb.restore();
       pool.release.restore();
       expect(err).not.toBe(null);
       done();
