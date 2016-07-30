@@ -2,6 +2,7 @@
 
 var RedisPool = require('sol-redis-pool');
 var EventEmitter = require('events').EventEmitter;
+var redisUrl = require('redis-url');
 
 /**
  * The cache manager Redis Store module
@@ -20,11 +21,11 @@ function redisStore(args) {
 
   // cache-manager should always pass in args
   /* istanbul ignore next */
-  var redisOptions = args || {};
+  var redisOptions = getFromUrl(args) || args || {};
   var poolSettings = redisOptions;
 
-  redisOptions.host = args.host || '127.0.0.1';
-  redisOptions.port = args.port || 6379;
+  redisOptions.host = redisOptions.host || '127.0.0.1';
+  redisOptions.port = redisOptions.port || 6379;
 
   var pool = new RedisPool(redisOptions, poolSettings);
 
@@ -86,6 +87,43 @@ function redisStore(args) {
         cb(null, result);
       }
     };
+  }
+
+  /**
+   * Extracts options from an args.url
+   * @param {Object} args
+   * @param {String} args.url a string in format of redis://[:password@]host[:port][/db-number][?option=value]
+   * @returns {Object} the input object args if it is falsy, does not contain url or url is not string, otherwise a new object with own properties of args
+   * but with host, port, db, ttl and auth_pass properties overridden by those provided in args.url.
+   */
+  function getFromUrl(args) {
+    if (!args || !args.url || typeof args.url !== 'string') return args;
+
+    try {
+      var options = redisUrl.parse(args.url);
+      // make a copy so we don't change input args
+      var newArgs = {};
+      for(var key in args){
+        if (key && args.hasOwnProperty(key)) {
+          newArgs[key] = args[key];
+        }
+      }
+
+      newArgs.isCacheableValue = args.isCacheableValue && args.isCacheableValue.bind(newArgs);
+      newArgs.host = options.hostname;
+      newArgs.port = parseInt(options.port, 10);
+      newArgs.db = parseInt(options.database, 10);
+      newArgs.auth_pass = options.password;
+      if(options.query && options.query.ttl){
+        newArgs.ttl = parseInt(options.query.ttl, 10);
+      }
+
+      return newArgs;
+    } catch (e) {
+      //url is unparsable so returning original
+      return args;
+    }
+
   }
 
   /**

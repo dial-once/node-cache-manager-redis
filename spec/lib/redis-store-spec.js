@@ -346,6 +346,44 @@ describe('redisErrorEvent', function () {
   });
 });
 
+describe('uses url to override redis options', function () {
+  var redisCacheByUrl;
+
+  beforeAll(function () {
+    redisCacheByUrl = require('cache-manager').caching({
+      store: redisStore,
+      // redis://[:password@]host[:port][/db-number][?option=value]
+      url: 'redis://:' + config.redis.auth_pass +'@' + config.redis.host + ':' + config.redis.port + '/' + config.redis.db +'?ttl=' + config.redis.ttl,
+      // some fakes to see that url overrides them
+      host: 'test-host',
+      port: -78,
+      db: -7,
+      auth_pass: 'test_pass',
+      ttl: -6
+    });
+  });
+
+  it('should ignore other options if set in url', function() {
+    expect(redisCacheByUrl.store._pool._redis_host).toBe(config.redis.host);
+    expect(redisCacheByUrl.store._pool._redis_port).toBe(config.redis.port);
+    expect(redisCacheByUrl.store._pool._redis_default_db).toBe(config.redis.db);
+    expect(redisCacheByUrl.store._pool._redis_options.auth_pass).toBe(config.redis.auth_pass);
+  });
+
+  it('should get and set values without error', function (done) {
+    var key = 'byUrlKey';
+    var value = 'test';
+    redisCacheByUrl.set(key, value, function (err) {
+      expect(err).toBe(null);
+      redisCacheByUrl.get(key, function(getErr, val){
+        expect(getErr).toBe(null);
+        expect(val).toEqual(value);
+        done();
+      });
+    });
+  });
+});
+
 describe('overridable isCacheableValue function', function () {
   var redisCache2;
 
