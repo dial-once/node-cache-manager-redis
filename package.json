@@ -22,10 +22,10 @@
   "author": "Dial Once",
   "license": "MIT",
   "dependencies": {
-    "cache-manager": "^1.2.2",
     "sol-redis-pool": "^0.2.1"
   },
   "devDependencies": {
+    "cache-manager": "^2.1.2",
     "codacy-coverage": "^1.1.3",
     "istanbul": "^0.4.0",
     "jasmine": "^2.3.2",
