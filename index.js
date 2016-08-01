@@ -75,7 +75,7 @@ function redisStore(args) {
 
         try {
           // allow undefined only if allowed by isCacheableValue
-          if(! ( (result === undefined || result === "undefined") && typeof args.isCacheableValue === 'function' && args.isCacheableValue(result))) {
+          if(! ( (result === undefined || result === 'undefined') && typeof args.isCacheableValue === 'function' && args.isCacheableValue(result))) {
             result = JSON.parse(result);
           }
         } catch (e) {
@@ -97,33 +97,53 @@ function redisStore(args) {
    * but with host, port, db, ttl and auth_pass properties overridden by those provided in args.url.
    */
   function getFromUrl(args) {
-    if (!args || !args.url || typeof args.url !== 'string') return args;
+    if (!args || typeof args.url !== 'string') {
+      return args;
+    }
 
     try {
       var options = redisUrl.parse(args.url);
-      // make a copy so we don't change input args
-      var newArgs = {};
-      for(var key in args){
-        if (key && args.hasOwnProperty(key)) {
-          newArgs[key] = args[key];
-        }
-      }
-
-      newArgs.isCacheableValue = args.isCacheableValue && args.isCacheableValue.bind(newArgs);
-      newArgs.host = options.hostname;
-      newArgs.port = parseInt(options.port, 10);
-      newArgs.db = parseInt(options.database, 10);
-      newArgs.auth_pass = options.password;
-      if(options.query && options.query.ttl){
-        newArgs.ttl = parseInt(options.query.ttl, 10);
-      }
-
-      return newArgs;
+      // make a clone so we don't change input args
+      return applyOptionsToArgs(args, options);
     } catch (e) {
       //url is unparsable so returning original
       return args;
     }
 
+  }
+
+  /**
+   * Clones args'es own properties to a new object and sets isCacheableValue on the new object
+   * @param  {Object} args
+   * @returns {Object} a clone of the args object
+   */
+  function cloneArgs(args) {
+    var newArgs = {};
+    for(var key in args){
+      if (key && args.hasOwnProperty(key)) {
+        newArgs[key] = args[key];
+      }
+    }
+    newArgs.isCacheableValue = args.isCacheableValue && args.isCacheableValue.bind(newArgs);
+    return newArgs;
+  }
+
+  /**
+   * Apply some options like hostname , port, db, ttl auth_pass from options to newArgs host, port, db, auth_pass and ttl and return clone of args
+   * @param {Object} args
+   * @param {Object} options
+   * @returns {Object} clone of args param with properties set to those of options
+   */
+  function applyOptionsToArgs(args, options) {
+    var newArgs = cloneArgs(args);
+    newArgs.host = options.hostname;
+    newArgs.port = parseInt(options.port, 10);
+    newArgs.db = parseInt(options.database, 10);
+    newArgs.auth_pass = options.password;
+    if(options.query && options.query.ttl){
+      newArgs.ttl = parseInt(options.query.ttl, 10);
+    }
+    return newArgs;
   }
 
   /**
