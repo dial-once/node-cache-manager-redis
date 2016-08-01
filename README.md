@@ -124,6 +124,20 @@ multiCache.wrap(key2, function (cb) {
 });
 ```
 
+### Using a URL instead of options (if url is correct it overrides options host, port, db, auth_pass and ttl)
+Urls should be in this format `redis://[:password@]host[:port][/db-number][?ttl=value]`
+```js
+var cacheManager = require('cache-manager');
+var redisStore = require('cache-manager-redis');
+
+var redisCache = cacheManager.caching({
+	store: redisStore,
+	url: 'redis://:XXXX@localhost:6379/0?ttl=600'
+});
+
+// proceed with redisCache
+```
+
 Tests
 -----
 
