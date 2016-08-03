@@ -23,6 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "cache-manager": "^1.2.2",
+    "redis-url": "^1.2.1",
     "sol-redis-pool": "^0.2.1"
   },
   "devDependencies": {
