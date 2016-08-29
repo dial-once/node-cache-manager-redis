@@ -65,11 +65,12 @@ function redisStore(args) {
     opts = opts || {};
 
     return function(err, result) {
-      pool.release(conn);
-
       if (err) {
+        pool.destroy(conn);
         return cb && cb(err);
       }
+
+      pool.release(conn);
 
       if (opts.parse) {
 
