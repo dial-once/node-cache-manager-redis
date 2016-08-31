@@ -365,8 +365,8 @@ describe('uses url to override redis options', function () {
   });
 
   it('should ignore other options if set in url', function() {
-    expect(redisCacheByUrl.store._pool._redis_host).toBe(config.redis.host);
-    expect(redisCacheByUrl.store._pool._redis_port).toBe(config.redis.port);
+    expect(redisCacheByUrl.store._pool._redis_options.host).toBe(config.redis.host);
+    expect(redisCacheByUrl.store._pool._redis_options.port).toBe(config.redis.port);
     expect(redisCacheByUrl.store._pool._redis_default_db).toBe(config.redis.db);
     expect(redisCacheByUrl.store._pool._redis_options.auth_pass).toBe(config.redis.auth_pass);
   });
@@ -411,11 +411,10 @@ describe('defaults', function () {
   });
 
   it('should default the host to `127.0.0.1`', function () {
-    expect(redisCache2.store._pool._redis_host).toBe('127.0.0.1');
+    expect(redisCache2.store._pool._redis_options.host).toBe('127.0.0.1');
   });
 
   it('should default the port to 6379', function () {
-    expect(redisCache2.store._pool._redis_port).toBe(6379);
+    expect(redisCache2.store._pool._redis_options.port).toBe(6379);
   });
 });
-
