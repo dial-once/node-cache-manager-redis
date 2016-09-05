@@ -1,11 +1,12 @@
 var config = require('../config.json');
 var redisStore = require('../../index');
 var sinon = require('sinon');
+var assert = require('assert');
 
 var redisCache;
 var customRedisCache;
 
-beforeAll(function () {
+before(function () {
   redisCache = require('cache-manager').caching({
     store: redisStore,
     host: config.redis.host,
@@ -41,11 +42,11 @@ describe ('initialization', function () {
       ttl: config.redis.ttl
     });
 
-    expect(redisPwdCache.store._pool._redis_options.password).toBe(config.redis.auth_pass);
+    assert.equal(redisPwdCache.store._pool._redis_options.password, config.redis.auth_pass);
     redisPwdCache.set('pwdfoo', 'pwdbar', function (err) {
-      expect(err).toBe(null);
+      assert.equal(err, null);
       redisCache.del('pwdfoo', function (errDel) {
-        expect(errDel).toBe(null);
+        assert.equal(errDel, null);
         done();
       });
     });
@@ -56,24 +57,24 @@ describe ('initialization', function () {
 describe('set', function () {
   it('should store a value without ttl', function (done) {
     redisCache.set('foo', 'bar', function (err) {
-      expect(err).toBe(null);
+      assert.equal(err, null);
       done();
     });
   });
 
   it('should store a value with a specific ttl', function (done) {
     redisCache.set('foo', 'bar', config.redis.ttl, function (err) {
-      expect(err).toBe(null);
+      assert.equal(err, null);
       done();
     });
   });
 
   it('should store a value with a infinite ttl', function (done) {
     redisCache.set('foo', 'bar', {ttl: 0}, function (err) {
-      expect(err).toBe(null);
+      assert.equal(err, null);
       redisCache.ttl('foo', function (err, ttl) {
-        expect(err).toBe(null);
-        expect(ttl).toBe(-1);
+        assert.equal(err, null);
+        assert.equal(ttl, -1);
         done();
       });
     });
@@ -81,10 +82,10 @@ describe('set', function () {
     it('should store a null value without error', function (done) {
       redisCache.set('foo2', null, function (err) {
         try {
-          expect(err).toBe(null);
+          assert.equal(err, null);
           redisCache.get('foo2', function (err, value) {
-            expect(err).toBe(null);
-            expect(value).toBe(null);
+            assert.equal(err, null);
+            assert.equal(value, null);
             done();
           });
         } catch (e) {
@@ -97,8 +98,8 @@ describe('set', function () {
   it('should store a value without callback', function (done) {
     redisCache.set('foo', 'baz');
     redisCache.get('foo', function (err, value) {
-      expect(err).toBe(null);
-      expect(value).toBe('baz');
+      assert.equal(err, null);
+      assert.equal(value, 'baz');
       done();
     });
   });
@@ -106,8 +107,8 @@ describe('set', function () {
   it('should not store an invalid value', function (done) {
     redisCache.set('foo1', undefined, function (err) {
       try {
-        expect(err).notToBe(null);
-        expect(err.message).toEqual('value cannot be undefined');
+        assert.notEqual(err, null);
+        assert.equal(err.message, 'value cannot be undefined');
         done();
       } catch (e) {
         done(e);
@@ -116,15 +117,15 @@ describe('set', function () {
   });
 
   it('should  store an undefined value if permitted by isCacheableValue', function (done) {
-    expect(customRedisCache.store.isCacheableValue(undefined)).toBe(true);
+    assert(customRedisCache.store.isCacheableValue(undefined), true);
     customRedisCache.set('foo3', undefined, function (err) {
       try {
-        expect(err).toBe(null);
+        assert.equal(err, null);
         customRedisCache.get('foo3', function (err, data) {
           try {
-            expect(err).toBe(null);
+            assert.equal(err, null);
             // redis stored undefined as 'undefined'
-            expect(data).toBe('undefined');
+            assert.equal(data, 'undefined');
             done();
           } catch (e) {
             done(e);
@@ -143,8 +144,8 @@ describe('get', function () {
     var value = 'bar';
     redisCache.set('foo', value, function () {
       redisCache.get('foo', function (err, result) {
-        expect(err).toBe(null);
-        expect(result).toBe(value);
+        assert.equal(err, null);
+        assert.equal(result, value);
         done();
       });
     });
@@ -154,8 +155,8 @@ describe('get', function () {
     var value = 'bar';
     redisCache.set('foo', value, function () {
       redisCache.get('foo', {}, function (err, result) {
-        expect(err).toBe(null);
-        expect(result).toBe(value);
+        assert.equal(err, null);
+        assert.equal(result, value);
         done();
       });
     });
@@ -163,8 +164,8 @@ describe('get', function () {
 
   it('should return null when the key is invalid', function (done) {
     redisCache.get('invalidKey', function (err, result) {
-      expect(err).toBe(null);
-      expect(result).toBe(null);
+      assert.equal(err, null);
+      assert.equal(result, null);
       done();
     });
   });
@@ -176,7 +177,7 @@ describe('get', function () {
     redisCache.get('foo', function (err) {
       pool.acquire.restore();
       pool.release.restore();
-      expect(err).not.toBe(null);
+      assert.notEqual(err, null);
       done();
     });
   });
@@ -186,7 +187,7 @@ describe('del', function () {
   it('should delete a value for a given key', function (done) {
     redisCache.set('foo', 'bar', function () {
       redisCache.del('foo', function (err) {
-        expect(err).toBe(null);
+        assert.equal(err, null);
         done();
       });
     });
@@ -207,7 +208,7 @@ describe('del', function () {
       redisCache.del('foo', function (err) {
         pool.acquire.restore();
         pool.release.restore();
-        expect(err).not.toBe(null);
+        assert.notEqual(err, null);
         done();
       });
     });
@@ -217,7 +218,7 @@ describe('del', function () {
 describe('reset', function () {
   it('should flush underlying db', function (done) {
     redisCache.reset(function (err) {
-      expect(err).toBe(null);
+      assert.equal(err, null);
       done();
     });
   });
@@ -234,7 +235,7 @@ describe('reset', function () {
     redisCache.reset(function (err) {
       pool.acquire.restore();
       pool.release.restore();
-      expect(err).not.toBe(null);
+      assert.notEqual(err, null);
       done();
     });
   });
@@ -244,8 +245,8 @@ describe('ttl', function () {
   it('should retrieve ttl for a given key', function (done) {
     redisCache.set('foo', 'bar', function () {
       redisCache.ttl('foo', function (err, ttl) {
-        expect(err).toBe(null);
-        expect(ttl).toBe(config.redis.ttl);
+        assert.equal(err, null);
+        assert.equal(ttl, config.redis.ttl);
         done();
       });
     });
@@ -253,8 +254,8 @@ describe('ttl', function () {
 
   it('should retrieve ttl for an invalid key', function (done) {
     redisCache.ttl('invalidKey', function (err, ttl) {
-      expect(err).toBe(null);
-      expect(ttl).not.toBe(null);
+      assert.equal(err, null);
+      assert.notEqual(ttl, null);
       done();
     });
   });
@@ -267,7 +268,7 @@ describe('ttl', function () {
       redisCache.ttl('foo', function (err) {
         pool.acquire.restore();
         pool.release.restore();
-        expect(err).not.toBe(null);
+        assert.notEqual(err, null);
         done();
       });
     });
@@ -278,9 +279,9 @@ describe('keys', function () {
   it('should return an array of keys for the given pattern', function (done) {
     redisCache.set('foo', 'bar', function () {
       redisCache.keys('f*', function (err, arrayOfKeys) {
-        expect(err).toBe(null);
-        expect(arrayOfKeys).not.toBe(null);
-        expect(arrayOfKeys.indexOf('foo')).not.toBe(-1);
+        assert.equal(err, null);
+        assert.notEqual(arrayOfKeys, null);
+        assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
         done();
       });
     });
@@ -289,9 +290,9 @@ describe('keys', function () {
   it('should return an array of keys without pattern', function (done) {
     redisCache.set('foo', 'bar', function () {
       redisCache.keys(function (err, arrayOfKeys) {
-        expect(err).toBe(null);
-        expect(arrayOfKeys).not.toBe(null);
-        expect(arrayOfKeys.indexOf('foo')).not.toBe(-1);
+        assert.equal(err, null);
+        assert.notEqual(arrayOfKeys, null);
+        assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
         done();
       });
     });
@@ -305,7 +306,7 @@ describe('keys', function () {
       redisCache.keys('f*', function (err) {
         pool.acquire.restore();
         pool.release.restore();
-        expect(err).not.toBe(null);
+        assert.notEqual(err, null);
         done();
       });
     });
@@ -314,16 +315,16 @@ describe('keys', function () {
 
 describe('isCacheableValue', function () {
   it('should return true when the value is not null or undefined', function (done) {
-    expect(redisCache.store.isCacheableValue(0)).toBe(true);
-    expect(redisCache.store.isCacheableValue(100)).toBe(true);
-    expect(redisCache.store.isCacheableValue('')).toBe(true);
-    expect(redisCache.store.isCacheableValue('test')).toBe(true);
+    assert.equal(redisCache.store.isCacheableValue(0), true);
+    assert.equal(redisCache.store.isCacheableValue(100), true);
+    assert.equal(redisCache.store.isCacheableValue(''), true);
+    assert.equal(redisCache.store.isCacheableValue('test'), true);
     done();
   });
 
   it('should return false when the value is null or undefined', function (done) {
-    expect(redisCache.store.isCacheableValue(null)).toBe(false);
-    expect(redisCache.store.isCacheableValue(undefined)).toBe(false);
+    assert.equal(redisCache.store.isCacheableValue(null), false);
+    assert.equal(redisCache.store.isCacheableValue(undefined), false);
     done();
   });
 });
@@ -331,18 +332,18 @@ describe('isCacheableValue', function () {
 describe('getClient', function () {
   it('should return redis client', function (done) {
     redisCache.store.getClient(function (err, redis) {
-      expect(err).toBe(null);
-      expect(redis).not.toBe(null);
-      expect(redis.client).not.toBe(null);
+      assert.equal(err, null);
+      assert.notEqual(redis, null);
+      assert.notEqual(redis.client, null);
       redis.done(done);
     });
   });
 
   it('should handle no done callback without an error', function (done) {
     redisCache.store.getClient(function (err, redis) {
-      expect(err).toBe(null);
-      expect(redis).not.toBe(null);
-      expect(redis.client).not.toBe(null);
+      assert.equal(err, null);
+      assert.notEqual(redis, null);
+      assert.notEqual(redis.client, null);
       redis.done();
       done();
     });
@@ -355,7 +356,7 @@ describe('getClient', function () {
     redisCache.store.getClient(function (err) {
       pool.acquire.restore();
       pool.release.restore();
-      expect(err).not.toBe(null);
+      assert.notEqual(err, null);
       done();
     });
   });
@@ -364,7 +365,7 @@ describe('getClient', function () {
 describe('redisErrorEvent', function () {
   it('should return an error when the redis server is unavailable', function (done) {
     redisCache.store.events.on('redisError', function (err) {
-      expect(err).not.toBe(null);
+      assert.notEqual(err, null);
       done();
     });
     redisCache.store._pool.emit('error', 'Something unexpected');
@@ -374,7 +375,7 @@ describe('redisErrorEvent', function () {
 describe('uses url to override redis options', function () {
   var redisCacheByUrl;
 
-  beforeAll(function () {
+  before(function () {
     redisCacheByUrl = require('cache-manager').caching({
       store: redisStore,
       // redis://[:password@]host[:port][/db-number][?option=value]
@@ -390,21 +391,21 @@ describe('uses url to override redis options', function () {
   });
 
   it('should ignore other options if set in url', function() {
-    expect(redisCacheByUrl.store._pool._redis_options.host).toBe(config.redis.host);
-    expect(redisCacheByUrl.store._pool._redis_options.port).toBe(config.redis.port);
-    expect(redisCacheByUrl.store._pool._redis_default_db).toBe(config.redis.db);
-    expect(redisCacheByUrl.store._pool._redis_options.auth_pass).toBe(config.redis.auth_pass);
-    expect(redisCacheByUrl.store._pool._redis_options.password).toBe(config.redis.auth_pass);
+    assert.equal(redisCacheByUrl.store._pool._redis_options.host, config.redis.host);
+    assert.equal(redisCacheByUrl.store._pool._redis_options.port, config.redis.port);
+    assert.equal(redisCacheByUrl.store._pool._redis_default_db, config.redis.db);
+    assert.equal(redisCacheByUrl.store._pool._redis_options.auth_pass, config.redis.auth_pass);
+    assert.equal(redisCacheByUrl.store._pool._redis_options.password, config.redis.auth_pass);
   });
 
   it('should get and set values without error', function (done) {
     var key = 'byUrlKey';
     var value = 'test';
     redisCacheByUrl.set(key, value, function (err) {
-      expect(err).toBe(null);
+      assert.equal(err, null);
       redisCacheByUrl.get(key, function(getErr, val){
-        expect(getErr).toBe(null);
-        expect(val).toEqual(value);
+        assert.equal(getErr, null);
+        assert.equal(val, value);
         done();
       });
     });
@@ -414,7 +415,7 @@ describe('uses url to override redis options', function () {
 describe('overridable isCacheableValue function', function () {
   var redisCache2;
 
-  beforeAll(function () {
+  before(function () {
     redisCache2 = require('cache-manager').caching({
       store: redisStore,
       isCacheableValue: function () {return 'I was overridden';}
@@ -422,7 +423,7 @@ describe('overridable isCacheableValue function', function () {
   });
 
   it('should return its return value instead of the built-in function', function (done) {
-    expect(redisCache2.store.isCacheableValue(0)).toBe('I was overridden');
+    assert.equal(redisCache2.store.isCacheableValue(0), 'I was overridden');
     done();
   });
 });
@@ -430,18 +431,18 @@ describe('overridable isCacheableValue function', function () {
 describe('defaults', function () {
   var redisCache2;
 
-  beforeAll(function () {
+  before(function () {
     redisCache2 = require('cache-manager').caching({
       store: redisStore
     });
   });
 
   it('should default the host to `127.0.0.1`', function () {
-    expect(redisCache2.store._pool._redis_options.host).toBe('127.0.0.1');
+    assert.equal(redisCache2.store._pool._redis_options.host, '127.0.0.1');
   });
 
   it('should default the port to 6379', function () {
-    expect(redisCache2.store._pool._redis_options.port).toBe(6379);
+    assert.equal(redisCache2.store._pool._redis_options.port, 6379);
   });
 });
 
