@@ -13,7 +13,10 @@ var zlib = require('zlib');
  * @param {Number} args.port - The Redis server port
  * @param {Number} args.db - The Redis server db
  * @param {function} args.isCacheableValue - function to override built-in isCacheableValue function (optional)
- * @param {boolean} args.gzip - Flag for gzip / gunzip compression.
+ * @param {boolean|Object} args.gzip - (optional) Boolean / Config Object for gzip / gunzip compression.
+ *            Setting this to true will use a default configuration for best speed. Passing in a config
+ *            object will forward those settings to the zlib methods. Please see the Node zlib documentation
+ *            for a list of valid options: https://nodejs.org/dist/latest-v4.x/docs/api/zlib.html#zlib_class_options
  */
 function redisStore(args) {
   var self = {
@@ -28,7 +31,13 @@ function redisStore(args) {
 
   redisOptions.host = redisOptions.host || '127.0.0.1';
   redisOptions.port = redisOptions.port || 6379;
+
+  // default gzip config
   redisOptions.detect_buffers = true;
+  var gzipDefault = { level: zlib.Z_BEST_SPEED };
+  if (redisOptions.gzip === true) {
+    redisOptions.gzip = gzipDefault;
+  }
 
   var pool = new RedisPool(redisOptions, poolSettings);
 
@@ -77,7 +86,7 @@ function redisStore(args) {
       if (opts.parse) {
 
         if (opts.gzip) {
-          return zlib.gunzip(result, { level: zlib.Z_BEST_SPEED }, function (err, gzResult) {
+          return zlib.gunzip(result, opts.gzip, function (err, gzResult) {
             if (err) {
               return cb && cb(err);
             }
@@ -175,6 +184,7 @@ function redisStore(args) {
    * @method get
    * @param {String} key - The cache key
    * @param {Object} [options] - The options (optional)
+   * @param {boolean|Object} options.gzip - gzip configuration
    * @param {Function} cb - A callback that returns a potential error and the response
    */
   self.get = function(key, options, cb) {
@@ -186,7 +196,7 @@ function redisStore(args) {
 
     var gzip = (options.gzip || options.gzip === false) ? options.gzip : redisOptions.gzip;
     if (gzip) {
-      options.gzip = true;
+      options.gzip = (gzip === true) ? gzipDefault : gzip;
       key = Buffer.from(key);
     }
 
@@ -206,6 +216,7 @@ function redisStore(args) {
    * @param {String} value - The value to set
    * @param {Object} [options] - The options (optional)
    * @param {Object} options.ttl - The ttl value
+   * @param {boolean|Object} options.gzip - gzip configuration
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
   self.set = function(key, value, options, cb) {
@@ -219,6 +230,9 @@ function redisStore(args) {
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
     var gzip = (options.gzip || options.gzip === false) ? options.gzip : redisOptions.gzip;
+    if (gzip === true) {
+      gzip = gzipDefault;
+    }
 
     connect(function(err, conn) {
       if (err) {
@@ -227,7 +241,7 @@ function redisStore(args) {
       var val = JSON.stringify(value);
 
       if (gzip) {
-        zlib.gzip(val, { level: zlib.Z_BEST_SPEED }, function (gzErr, gzVal) {
+        zlib.gzip(val, gzip, function (gzErr, gzVal) {
           if (gzErr) {
             return cb && cb(gzErr);
           }
