@@ -29,6 +29,30 @@ beforeAll(function () {
   });
 });
 
+describe ('initialization', function () {
+
+  it('should create a store with password instead of auth_pass (auth_pass is deprecated for redis > 2.5)', function (done) {
+    var redisPwdCache = require('cache-manager').caching({
+      store: redisStore,
+      host: config.redis.host,
+      port: config.redis.port,
+      password: config.redis.auth_pass,
+      db: config.redis.db,
+      ttl: config.redis.ttl
+    });
+
+    expect(redisPwdCache.store._pool._redis_options.password).toBe(config.redis.auth_pass);
+    redisPwdCache.set('pwdfoo', 'pwdbar', function (err) {
+      expect(err).toBe(null);
+      redisCache.del('pwdfoo', function (errDel) {
+        expect(errDel).toBe(null);
+        done();
+      });
+    });
+  });
+
+});
+
 describe('set', function () {
   it('should store a value without ttl', function (done) {
     redisCache.set('foo', 'bar', function (err) {
@@ -51,6 +75,21 @@ describe('set', function () {
         expect(err).toBe(null);
         expect(ttl).toBe(-1);
         done();
+      });
+    });
+
+    it('should store a null value without error', function (done) {
+      redisCache.set('foo2', null, function (err) {
+        try {
+          expect(err).toBe(null);
+          redisCache.get('foo2', function (err, value) {
+            expect(err).toBe(null);
+            expect(value).toBe(null);
+            done();
+          });
+        } catch (e) {
+          done(e);
+        }
       });
     });
   });
@@ -97,21 +136,6 @@ describe('set', function () {
     });
   });
 
-});
-
-it('should  store a null value without error', function (done) {
-  redisCache.set('foo2', null, function (err) {
-    try {
-      expect(err).toBe(null);
-      redisCache.get('foo2', function (err, value) {
-        expect(err).toBe(null);
-        expect(value).toBe(null);
-        done();
-      });
-    } catch (e) {
-      done(e);
-    }
-  });
 });
 
 describe('get', function () {
@@ -360,6 +384,7 @@ describe('uses url to override redis options', function () {
       port: -78,
       db: -7,
       auth_pass: 'test_pass',
+      password: 'test_pass',
       ttl: -6
     });
   });
@@ -369,6 +394,7 @@ describe('uses url to override redis options', function () {
     expect(redisCacheByUrl.store._pool._redis_options.port).toBe(config.redis.port);
     expect(redisCacheByUrl.store._pool._redis_default_db).toBe(config.redis.db);
     expect(redisCacheByUrl.store._pool._redis_options.auth_pass).toBe(config.redis.auth_pass);
+    expect(redisCacheByUrl.store._pool._redis_options.password).toBe(config.redis.auth_pass);
   });
 
   it('should get and set values without error', function (done) {
