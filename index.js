@@ -3,6 +3,7 @@
 var RedisPool = require('sol-redis-pool');
 var EventEmitter = require('events').EventEmitter;
 var redisUrl = require('redis-url');
+var zlib = require('zlib');
 
 /**
  * The cache manager Redis Store module
@@ -12,6 +13,7 @@ var redisUrl = require('redis-url');
  * @param {Number} args.port - The Redis server port
  * @param {Number} args.db - The Redis server db
  * @param {function} args.isCacheableValue - function to override built-in isCacheableValue function (optional)
+ * @param {boolean} args.gzip - Flag for gzip / gunzip compression.
  */
 function redisStore(args) {
   var self = {
@@ -26,6 +28,7 @@ function redisStore(args) {
 
   redisOptions.host = redisOptions.host || '127.0.0.1';
   redisOptions.port = redisOptions.port || 6379;
+  redisOptions.detect_buffers = true;
 
   var pool = new RedisPool(redisOptions, poolSettings);
 
@@ -72,6 +75,26 @@ function redisStore(args) {
       }
 
       if (opts.parse) {
+
+        if (opts.gzip) {
+          return zlib.gunzip(result, { level: zlib.Z_BEST_SPEED }, function (err, gzResult) {
+            if (err) {
+              return cb && cb(err);
+            }
+            try {
+              // allow undefined only if allowed by isCacheableValue
+              if(! ( (gzResult === undefined || gzResult === 'undefined') && typeof args.isCacheableValue === 'function' && args.isCacheableValue(gzResult))) {
+                gzResult = JSON.parse(gzResult);
+              }
+            } catch (e) {
+              return cb && cb(e);
+            }
+
+            if (cb) {
+              cb(null, gzResult);
+            }
+          });
+        }
 
         try {
           // allow undefined only if allowed by isCacheableValue
@@ -129,8 +152,7 @@ function redisStore(args) {
   }
 
   /**
-   * Apply some options like hostname, port, db, ttl, auth_pass, password
-   * from options to newArgs host, port, db, auth_pass, password and ttl and return clone of args
+   * Apply some options like hostname , port, db, ttl auth_pass from options to newArgs host, port, db, auth_pass and ttl and return clone of args
    * @param {Object} args
    * @param {Object} options
    * @returns {Object} clone of args param with properties set to those of options
@@ -158,6 +180,14 @@ function redisStore(args) {
   self.get = function(key, options, cb) {
     if (typeof options === 'function') {
       cb = options;
+      options = {};
+    }
+    options.parse = true;
+
+    var gzip = (options.gzip || options.gzip === false) ? options.gzip : redisOptions.gzip;
+    if (gzip) {
+      options.gzip = true;
+      key = Buffer.from(key);
     }
 
     connect(function(err, conn) {
@@ -165,9 +195,7 @@ function redisStore(args) {
         return cb && cb(err);
       }
 
-      conn.get(key, handleResponse(conn, cb, {
-        parse: true
-      }));
+      conn.get(key, handleResponse(conn, cb, options));
     });
   };
 
@@ -190,16 +218,35 @@ function redisStore(args) {
     options = options || {};
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
+    var gzip = (options.gzip || options.gzip === false) ? options.gzip : redisOptions.gzip;
 
     connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
       var val = JSON.stringify(value);
-      if (ttl) {
-        conn.setex(key, ttl, val, handleResponse(conn, cb));
-      } else {
-        conn.set(key, val, handleResponse(conn, cb));
+
+      if (gzip) {
+        zlib.gzip(val, { level: zlib.Z_BEST_SPEED }, function (gzErr, gzVal) {
+          if (gzErr) {
+            return cb && cb(gzErr);
+          }
+
+          if (ttl) {
+            conn.setex(key, ttl, gzVal, handleResponse(conn, cb));
+          }
+          else {
+            conn.set(key, gzVal, handleResponse(conn, cb));
+          }
+        });
+      }
+      else {
+        if (ttl) {
+          conn.setex(key, ttl, val, handleResponse(conn, cb));
+        }
+        else {
+          conn.set(key, val, handleResponse(conn, cb));
+        }
       }
     });
   };
