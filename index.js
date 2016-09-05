@@ -199,7 +199,7 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      var val = JSON.stringify(value);
+      var val = JSON.stringify(value) || 'undefined';
       if (ttl) {
         conn.setex(key, ttl, val, handleResponse(conn, cb));
       } else {
