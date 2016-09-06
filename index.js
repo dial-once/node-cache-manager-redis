@@ -187,6 +187,10 @@ function redisStore(args) {
       options = {};
     }
 
+    if (!value && !self.isCacheableValue(value)) {
+      return cb(new Error('value cannot be ' + value));
+    }
+
     options = options || {};
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
