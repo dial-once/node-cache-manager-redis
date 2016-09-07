@@ -86,9 +86,9 @@ function redisStore(args) {
       if (opts.parse) {
 
         if (opts.gzip) {
-          return zlib.gunzip(result, opts.gzip, function (err, gzResult) {
-            if (err) {
-              return cb && cb(err);
+          return zlib.gunzip(result, opts.gzip, function (gzErr, gzResult) {
+            if (gzErr) {
+              return cb && cb(gzErr);
             }
             try {
               // allow undefined only if allowed by isCacheableValue
@@ -227,6 +227,10 @@ function redisStore(args) {
       options = {};
     }
 
+    if (!value && !self.isCacheableValue(value)) {
+      return cb(new Error('value cannot be ' + value));
+    }
+
     options = options || {};
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
@@ -239,7 +243,7 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      var val = JSON.stringify(value);
+      var val = JSON.stringify(value) || 'undefined';
 
       if (gzip) {
         zlib.gzip(val, gzip, function (gzErr, gzVal) {
