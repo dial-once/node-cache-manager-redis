@@ -183,7 +183,7 @@ function redisStore(args) {
       options = {};
     }
 
-    if (!value && !self.isCacheableValue(value)) {
+    if (!self.isCacheableValue(value)) {
       return cb(new Error('value cannot be ' + value));
     }
 
