@@ -72,12 +72,8 @@ function redisStore(args) {
       }
 
       if (opts.parse) {
-
         try {
-          // allow undefined only if allowed by isCacheableValue
-          if(! ( (result === undefined || result === 'undefined') && typeof args.isCacheableValue === 'function' && args.isCacheableValue(result))) {
-            result = JSON.parse(result);
-          }
+          result = JSON.parse(result);
         } catch (e) {
           return cb && cb(e);
         }
@@ -129,7 +125,8 @@ function redisStore(args) {
   }
 
   /**
-   * Apply some options like hostname , port, db, ttl auth_pass from options to newArgs host, port, db, auth_pass and ttl and return clone of args
+   * Apply some options like hostname, port, db, ttl, auth_pass, password
+   * from options to newArgs host, port, db, auth_pass, password and ttl and return clone of args
    * @param {Object} args
    * @param {Object} options
    * @returns {Object} clone of args param with properties set to those of options
@@ -140,6 +137,7 @@ function redisStore(args) {
     newArgs.port = parseInt(options.port, 10);
     newArgs.db = parseInt(options.database, 10);
     newArgs.auth_pass = options.password;
+    newArgs.password = options.password;
     if(options.query && options.query.ttl){
       newArgs.ttl = parseInt(options.query.ttl, 10);
     }
@@ -185,6 +183,10 @@ function redisStore(args) {
       options = {};
     }
 
+    if (!self.isCacheableValue(value)) {
+      return cb(new Error('value cannot be ' + value));
+    }
+
     options = options || {};
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
@@ -193,7 +195,7 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      var val = JSON.stringify(value);
+      var val = JSON.stringify(value) || '"undefined"';
       if (ttl) {
         conn.setex(key, ttl, val, handleResponse(conn, cb));
       } else {
