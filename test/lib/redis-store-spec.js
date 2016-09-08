@@ -5,6 +5,7 @@ var assert = require('assert');
 
 var redisCache;
 var customRedisCache;
+var customRedisCache2;
 
 before(function () {
   redisCache = require('cache-manager').caching({
@@ -25,6 +26,19 @@ before(function () {
     isCacheableValue: function (val) {
       // allow undefined
       if (val === undefined) return true;
+      return redisCache.store.isCacheableValue(val);
+    }
+  });
+
+  customRedisCache2 = require('cache-manager').caching({
+    store: redisStore,
+    host: config.redis.host,
+    port: config.redis.port,
+    db: config.redis.db,
+    ttl: config.redis.ttl,
+    isCacheableValue: function (val) {
+      // disallow FooBarString
+      if (val === 'FooBarString') return false;
       return redisCache.store.isCacheableValue(val);
     }
   });
@@ -131,6 +145,19 @@ describe('set', function () {
             done(e);
           }
         });
+      } catch (e) {
+        done(e);
+      }
+    });
+  });
+
+  it('should not store a value disallowed by isCacheableValue', function (done) {
+    assert.strictEqual(customRedisCache2.store.isCacheableValue('FooBarString'), false);
+    customRedisCache2.set('foobar', 'FooBarString', function (err) {
+      try {
+        assert.notEqual(err, null);
+        assert.equal(err.message, 'value cannot be FooBarString');
+        done();
       } catch (e) {
         done(e);
       }
