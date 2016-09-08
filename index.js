@@ -106,10 +106,7 @@ function redisStore(args) {
         }
 
         try {
-          // allow undefined only if allowed by isCacheableValue
-          if(! ( (result === undefined || result === 'undefined') && typeof args.isCacheableValue === 'function' && args.isCacheableValue(result))) {
-            result = JSON.parse(result);
-          }
+          result = JSON.parse(result);
         } catch (e) {
           return cb && cb(e);
         }
@@ -227,7 +224,7 @@ function redisStore(args) {
       options = {};
     }
 
-    if (!value && !self.isCacheableValue(value)) {
+    if (!self.isCacheableValue(value)) {
       return cb(new Error('value cannot be ' + value));
     }
 
@@ -243,7 +240,7 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      var val = JSON.stringify(value) || 'undefined';
+      var val = JSON.stringify(value) || '"undefined"';
 
       if (gzip) {
         zlib.gzip(val, gzip, function (gzErr, gzVal) {
