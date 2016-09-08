@@ -85,16 +85,13 @@ function redisStore(args) {
 
       if (opts.parse) {
 
-        if (opts.gzip) {
+        if (result && opts.gzip) {
           return zlib.gunzip(result, opts.gzip, function (gzErr, gzResult) {
             if (gzErr) {
               return cb && cb(gzErr);
             }
             try {
-              // allow undefined only if allowed by isCacheableValue
-              if(! ( (gzResult === undefined || gzResult === 'undefined') && typeof args.isCacheableValue === 'function' && args.isCacheableValue(gzResult))) {
-                gzResult = JSON.parse(gzResult);
-              }
+              gzResult = JSON.parse(gzResult);
             } catch (e) {
               return cb && cb(e);
             }
@@ -195,7 +192,7 @@ function redisStore(args) {
     var gzip = (options.gzip || options.gzip === false) ? options.gzip : redisOptions.gzip;
     if (gzip) {
       options.gzip = (gzip === true) ? gzipDefault : gzip;
-      key = Buffer.from(key);
+      key = new Buffer(key);
     }
 
     connect(function(err, conn) {
