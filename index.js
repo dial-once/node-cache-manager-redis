@@ -284,7 +284,7 @@ function redisStore(args) {
    * @return {Boolean} - Returns true if the value is cacheable, otherwise false.
    */
   self.isCacheableValue = args.isCacheableValue || function(value) {
-    return value !== null && value !== undefined;
+    return value !== undefined;
   };
 
   /**
