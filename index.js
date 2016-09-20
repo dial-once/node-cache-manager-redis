@@ -277,7 +277,7 @@ function redisStore(args) {
   /**
    * Specify which values should and should not be cached.
    * If the function returns true, it will be stored in cache.
-   * By default, it caches everything except null and undefined values.
+   * By default, it caches everything except undefined values.
    * Can be overriden via standard node-cache-manager options.
    * @method isCacheableValue
    * @param {String} value - The value to check
