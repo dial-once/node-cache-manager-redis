@@ -5,7 +5,6 @@ var assert = require('assert');
 
 var redisCache;
 var customRedisCache;
-var customRedisCache2;
 
 before(function () {
   redisCache = require('cache-manager').caching({
@@ -25,20 +24,11 @@ before(function () {
     ttl: config.redis.ttl,
     isCacheableValue: function (val) {
       // allow undefined
-      if (val === undefined) return true;
-      return redisCache.store.isCacheableValue(val);
-    }
-  });
-
-  customRedisCache2 = require('cache-manager').caching({
-    store: redisStore,
-    host: config.redis.host,
-    port: config.redis.port,
-    db: config.redis.db,
-    ttl: config.redis.ttl,
-    isCacheableValue: function (val) {
+      if (val === undefined)
+        return true;
       // disallow FooBarString
-      if (val === 'FooBarString') return false;
+      else if (val === 'FooBarString')
+        return false;
       return redisCache.store.isCacheableValue(val);
     }
   });
@@ -92,20 +82,20 @@ describe('set', function () {
         done();
       });
     });
+  });
 
-    it('should store a null value without error', function (done) {
-      redisCache.set('foo2', null, function (err) {
-        try {
+  it('should store a null value without error', function (done) {
+    redisCache.set('foo2', null, function (err) {
+      try {
+        assert.equal(err, null);
+        redisCache.get('foo2', function (err, value) {
           assert.equal(err, null);
-          redisCache.get('foo2', function (err, value) {
-            assert.equal(err, null);
-            assert.equal(value, null);
-            done();
-          });
-        } catch (e) {
-          done(e);
-        }
-      });
+          assert.equal(value, null);
+          done();
+        });
+      } catch (e) {
+        done(e);
+      }
     });
   });
 
@@ -130,7 +120,7 @@ describe('set', function () {
     });
   });
 
-  it('should  store an undefined value if permitted by isCacheableValue', function (done) {
+  it('should store an undefined value if permitted by isCacheableValue', function (done) {
     assert(customRedisCache.store.isCacheableValue(undefined), true);
     customRedisCache.set('foo3', undefined, function (err) {
       try {
@@ -152,8 +142,8 @@ describe('set', function () {
   });
 
   it('should not store a value disallowed by isCacheableValue', function (done) {
-    assert.strictEqual(customRedisCache2.store.isCacheableValue('FooBarString'), false);
-    customRedisCache2.set('foobar', 'FooBarString', function (err) {
+    assert.strictEqual(customRedisCache.store.isCacheableValue('FooBarString'), false);
+    customRedisCache.set('foobar', 'FooBarString', function (err) {
       try {
         assert.notEqual(err, null);
         assert.equal(err.message, 'value cannot be FooBarString');
@@ -341,16 +331,16 @@ describe('keys', function () {
 });
 
 describe('isCacheableValue', function () {
-  it('should return true when the value is not null or undefined', function (done) {
+  it('should return true when the value is not undefined', function (done) {
     assert.equal(redisCache.store.isCacheableValue(0), true);
     assert.equal(redisCache.store.isCacheableValue(100), true);
     assert.equal(redisCache.store.isCacheableValue(''), true);
     assert.equal(redisCache.store.isCacheableValue('test'), true);
+    assert.equal(redisCache.store.isCacheableValue(null), true);
     done();
   });
 
-  it('should return false when the value is null or undefined', function (done) {
-    assert.equal(redisCache.store.isCacheableValue(null), false);
+  it('should return false when the value is undefined', function (done) {
     assert.equal(redisCache.store.isCacheableValue(undefined), false);
     done();
   });
