@@ -239,27 +239,25 @@ function redisStore(args) {
       }
       var val = JSON.stringify(value) || '"undefined"';
 
-      if (gzip) {
-        zlib.gzip(val, gzip, function (gzErr, gzVal) {
-          if (gzErr) {
-            return cb && cb(gzErr);
-          }
+      // Refactored to remove duplicate code.
+      function persist(pErr, pVal) {
+        if (pErr) {
+          return cb && cb(pErr);
+        }
 
-          if (ttl) {
-            conn.setex(key, ttl, gzVal, handleResponse(conn, cb));
-          }
-          else {
-            conn.set(key, gzVal, handleResponse(conn, cb));
-          }
-        });
-      }
-      else {
         if (ttl) {
-          conn.setex(key, ttl, val, handleResponse(conn, cb));
+          conn.setex(key, ttl, pVal, handleResponse(conn, cb));
         }
         else {
-          conn.set(key, val, handleResponse(conn, cb));
+          conn.set(key, pVal, handleResponse(conn, cb));
         }
+      }
+
+      if (gzip) {
+        zlib.gzip(val, gzip, persist);
+      }
+      else {
+        persist(null, val);
       }
     });
   };
