@@ -138,6 +138,49 @@ var redisCache = cacheManager.caching({
 // proceed with redisCache
 ```
 
+### Using the Node Zlib module to seamlessly gzip/gunzip values
+
+```js
+// Compression can be configured for the entire cache.
+var redisCache = cacheManager.caching({
+	store: redisStore,
+	host: 'localhost', // default value
+	port: 6379, // default value
+	auth_pass: 'XXXXX',
+	db: 0,
+	ttl: 600,
+	gzip: true
+});
+
+// Or on a per command basis. (only applies to get / set commands)
+redisCache.set('foo', 'bar', { gzip: false }, function(err) {
+    if (err) {
+      throw err;
+    }
+
+    redisCache.get('foo', { gzip: false }, function(err, result) {
+        console.log(result);
+        // >> 'bar'
+        redisCache.del('foo', function(err) {});
+    });
+});
+
+// Setting the gzip option to true will enable a default configuration 
+// for best speed. For advanced use, a configuration object may also be 
+// passed with zlib-specific options.
+var zlib = require('zlib');
+var redisCache = cacheManager.caching({
+	store: redisStore,
+	host: 'localhost', // default value
+	port: 6379, // default value
+	auth_pass: 'XXXXX',
+	db: 0,
+	ttl: 600,
+	gzip: { level: zlib.Z_BEST_COMPRESSION }
+});
+```
+All `Zlib`-specific configuration options are passed directly to the `zlib.gzip` and `zlib.gunzip` methods. Please see the [Node Zlib documentation](https://nodejs.org/dist/latest-v6.x/docs/api/zlib.html#zlib_class_options) for available options.
+
 Tests
 -----
 
