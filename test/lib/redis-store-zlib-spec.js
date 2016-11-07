@@ -174,10 +174,10 @@ describe('Gzip Tests', function () {
 
     it('should return an error if there is an error acquiring a connection', function (done) {
       var pool = redisGzipCache.store._pool;
-      sinon.stub(pool, 'acquire').yieldsAsync('Something unexpected');
+      sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
       sinon.stub(pool, 'release');
       redisGzipCache.get('foo', function (err) {
-        pool.acquire.restore();
+        pool.acquireDb.restore();
         pool.release.restore();
         assert.notEqual(err, null);
         done();
