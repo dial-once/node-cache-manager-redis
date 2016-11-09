@@ -240,16 +240,14 @@ function redisStore(args) {
 
         if (ttl) {
           conn.setex(key, ttl, pVal, handleResponse(conn, cb));
-        }
-        else {
+        } else {
           conn.set(key, pVal, handleResponse(conn, cb));
         }
       }
 
       if (compress) {
         zlib.gzip(val, compress.params || {}, persist);
-      }
-      else {
+      } else {
         persist(null, val);
       }
     });

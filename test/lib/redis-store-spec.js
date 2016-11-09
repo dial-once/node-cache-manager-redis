@@ -28,9 +28,8 @@ describe('Normal Tests', function () {
         // allow undefined
         if (val === undefined) {
           return true;
-        }
-        // disallow FooBarString
-        else if (val === 'FooBarString') {
+        } else if (val === 'FooBarString') {
+          // disallow FooBarString
           return false;
         }
         return redisCache.store.isCacheableValue(val);

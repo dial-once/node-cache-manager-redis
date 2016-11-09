@@ -32,8 +32,7 @@ describe('Compression Tests', function () {
         // allow undefined
         if (val === undefined) {
           return true;
-        }
-        else if (val === 'FooBarString') {
+        } else if (val === 'FooBarString') {
           return false;
         }
         return redisCompressCache.store.isCacheableValue(val);
