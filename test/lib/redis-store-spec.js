@@ -26,11 +26,13 @@ describe('Normal Tests', function () {
       ttl: config.redis.ttl,
       isCacheableValue: function (val) {
         // allow undefined
-        if (val === undefined)
+        if (val === undefined) {
           return true;
+        }
         // disallow FooBarString
-        else if (val === 'FooBarString')
+        else if (val === 'FooBarString') {
           return false;
+        }
         return redisCache.store.isCacheableValue(val);
       }
     });
@@ -95,8 +97,7 @@ describe('Normal Tests', function () {
             assert.equal(value, null);
             done();
           });
-        }
-        catch(e) {
+        } catch(e) {
           done(e);
         }
       });
@@ -117,8 +118,7 @@ describe('Normal Tests', function () {
           assert.notEqual(err, null);
           assert.equal(err.message, 'value cannot be undefined');
           done();
-        }
-        catch(e) {
+        } catch(e) {
           done(e);
         }
       });
@@ -135,13 +135,11 @@ describe('Normal Tests', function () {
               // redis stored undefined as 'undefined'
               assert.equal(data, 'undefined');
               done();
-            }
-            catch(e) {
+            } catch(e) {
               done(e);
             }
           });
-        }
-        catch(e) {
+        } catch(e) {
           done(e);
         }
       });
@@ -154,8 +152,7 @@ describe('Normal Tests', function () {
           assert.notEqual(err, null);
           assert.equal(err.message, 'value cannot be FooBarString');
           done();
-        }
-        catch(e) {
+        } catch(e) {
           done(e);
         }
       });

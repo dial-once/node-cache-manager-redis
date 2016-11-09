@@ -30,10 +30,12 @@ describe('Compression Tests', function () {
       compress: true,
       isCacheableValue: function (val) {
         // allow undefined
-        if (val === undefined)
+        if (val === undefined) {
           return true;
-        else if (val === 'FooBarString')
+        }
+        else if (val === 'FooBarString') {
           return false;
+        }
         return redisCompressCache.store.isCacheableValue(val);
       }
     });
@@ -76,8 +78,7 @@ describe('Compression Tests', function () {
             assert.equal(value, null);
             done();
           });
-        }
-        catch(e) {
+        } catch(e) {
           done(e);
         }
       });
@@ -98,8 +99,7 @@ describe('Compression Tests', function () {
           assert.notEqual(err, null);
           assert.equal(err.message, 'value cannot be undefined');
           done();
-        }
-        catch(e) {
+        } catch(e) {
           done(e);
         }
       });
@@ -116,13 +116,11 @@ describe('Compression Tests', function () {
               // redis stored undefined as 'undefined'
               assert.equal(data, 'undefined');
               done();
-            }
-            catch(e) {
+            } catch(e) {
               done(e);
             }
           });
-        }
-        catch(e) {
+        } catch(e) {
           done(e);
         }
       });
@@ -135,8 +133,7 @@ describe('Compression Tests', function () {
           assert.notEqual(err, null);
           assert.equal(err.message, 'value cannot be FooBarString');
           done();
-        }
-        catch(e) {
+        } catch(e) {
           done(e);
         }
       });
