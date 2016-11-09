@@ -13,10 +13,11 @@ var zlib = require('zlib');
  * @param {Number} args.port - The Redis server port
  * @param {Number} args.db - The Redis server db
  * @param {function} args.isCacheableValue - function to override built-in isCacheableValue function (optional)
- * @param {boolean|Object} args.gzip - (optional) Boolean / Config Object for gzip / gunzip compression.
- *            Setting this to true will use a default configuration for best speed. Passing in a config
- *            object will forward those settings to the zlib methods. Please see the Node zlib documentation
- *            for a list of valid options: https://nodejs.org/dist/latest-v4.x/docs/api/zlib.html#zlib_class_options
+ * @param {boolean|Object} args.compress - (optional) Boolean / Config Object for pluggable compression.
+ *            Setting this to true will use a default gzip configuration for best speed. Passing in a config
+ *            object will forward those settings to the underlying compression implementation. Please see the
+ *            Node zlib documentation for a list of valid options for gzip:
+ *            https://nodejs.org/dist/latest-v4.x/docs/api/zlib.html#zlib_class_options
  */
 function redisStore(args) {
   var self = {
@@ -33,11 +34,18 @@ function redisStore(args) {
   redisOptions.port = redisOptions.port || 6379;
   redisOptions.db = redisOptions.db || 0;
 
-  // default gzip config
+  // default compress config
   redisOptions.detect_buffers = true;
-  var gzipDefault = { level: zlib.Z_BEST_SPEED };
-  if (redisOptions.gzip === true) {
-    redisOptions.gzip = gzipDefault;
+  var compressDefault = {
+    type: 'gzip',
+    params: {
+      level: zlib.Z_BEST_SPEED
+    }
+  };
+
+  // if compress is boolean true, set default
+  if (redisOptions.compress === true) {
+    redisOptions.compress = compressDefault;
   }
 
   var pool = new RedisPool(redisOptions, poolSettings);
@@ -74,8 +82,8 @@ function redisStore(args) {
 
       if (opts.parse) {
 
-        if (result && opts.gzip) {
-          return zlib.gunzip(result, opts.gzip, function (gzErr, gzResult) {
+        if (result && opts.compress) {
+          return zlib.gunzip(result, opts.compress.params || {}, function (gzErr, gzResult) {
             if (gzErr) {
               return cb && cb(gzErr);
             }
@@ -85,9 +93,7 @@ function redisStore(args) {
               return cb && cb(e);
             }
 
-            if (cb) {
-              cb(null, gzResult);
-            }
+            return cb && cb(null, gzResult);
           });
         }
 
@@ -98,9 +104,7 @@ function redisStore(args) {
         }
       }
 
-      if (cb) {
-        cb(null, result);
-      }
+      return cb && cb(null, result);
     };
   }
 
@@ -168,7 +172,7 @@ function redisStore(args) {
    * @method get
    * @param {String} key - The cache key
    * @param {Object} [options] - The options (optional)
-   * @param {boolean|Object} options.gzip - gzip configuration
+   * @param {boolean|Object} options.compress - compression configuration
    * @param {Function} cb - A callback that returns a potential error and the response
    */
   self.get = function(key, options, cb) {
@@ -178,9 +182,9 @@ function redisStore(args) {
     }
     options.parse = true;
 
-    var gzip = (options.gzip || options.gzip === false) ? options.gzip : redisOptions.gzip;
-    if (gzip) {
-      options.gzip = (gzip === true) ? gzipDefault : gzip;
+    var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
+    if (compress) {
+      options.compress = (compress === true) ? compressDefault : compress;
       key = new Buffer(key);
     }
 
@@ -200,7 +204,7 @@ function redisStore(args) {
    * @param {String} value - The value to set
    * @param {Object} [options] - The options (optional)
    * @param {Object} options.ttl - The ttl value
-   * @param {boolean|Object} options.gzip - gzip configuration
+   * @param {boolean|Object} options.compress - compression configuration
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
   self.set = function(key, value, options, cb) {
@@ -217,9 +221,9 @@ function redisStore(args) {
     options = options || {};
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
-    var gzip = (options.gzip || options.gzip === false) ? options.gzip : redisOptions.gzip;
-    if (gzip === true) {
-      gzip = gzipDefault;
+    var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
+    if (compress === true) {
+      compress = compressDefault;
     }
 
     connect(function(err, conn) {
@@ -242,8 +246,8 @@ function redisStore(args) {
         }
       }
 
-      if (gzip) {
-        zlib.gzip(val, gzip, persist);
+      if (compress) {
+        zlib.gzip(val, compress.params || {}, persist);
       }
       else {
         persist(null, val);

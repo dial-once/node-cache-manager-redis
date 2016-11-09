@@ -4,62 +4,62 @@ var sinon = require('sinon');
 var assert = require('assert');
 var zlib = require('zlib');
 
-var redisGzipCache;
-var customRedisGzipCache;
+var redisCompressCache;
+var customRedisCompressCache;
 var testJson;
 
-describe('Gzip Tests', function () {
+describe('Compression Tests', function () {
 
   before(function () {
-    redisGzipCache = require('cache-manager').caching({
+    redisCompressCache = require('cache-manager').caching({
       store: redisStore,
       host: config.redis.host,
       port: config.redis.port,
       auth_pass: config.redis.auth_pass,
       db: config.redis.db,
       ttl: config.redis.ttl,
-      gzip: true
+      compress: true
     });
 
-    customRedisGzipCache = require('cache-manager').caching({
+    customRedisCompressCache = require('cache-manager').caching({
       store: redisStore,
       host: config.redis.host,
       port: config.redis.port,
       db: config.redis.db,
       ttl: config.redis.ttl,
-      gzip: true,
+      compress: true,
       isCacheableValue: function (val) {
         // allow undefined
         if (val === undefined)
           return true;
         else if (val === 'FooBarString')
           return false;
-        return redisGzipCache.store.isCacheableValue(val);
+        return redisCompressCache.store.isCacheableValue(val);
       }
     });
 
     testJson = JSON.stringify(testObject);
   });
 
-  describe('gzip set', function () {
+  describe('compress set', function () {
     it('should store a value without ttl', function (done) {
-      redisGzipCache.set('foo', 'bar', function (err) {
+      redisCompressCache.set('foo', 'bar', function (err) {
         assert.equal(err, null);
         done();
       });
     });
 
     it('should store a value with a specific ttl', function (done) {
-      redisGzipCache.set('foo', 'bar', config.redis.ttl, function (err) {
+      redisCompressCache.set('foo', 'bar', config.redis.ttl, function (err) {
         assert.equal(err, null);
         done();
       });
     });
 
     it('should store a value with a infinite ttl', function (done) {
-      redisGzipCache.set('foo', 'bar', { ttl: 0 }, function (err) {
+      redisCompressCache.set('foo', 'bar', { ttl: 0 }, function (err) {
         assert.equal(err, null);
-        redisGzipCache.ttl('foo', function (err, ttl) {
+        redisCompressCache.ttl('foo', function (err, ttl) {
           assert.equal(err, null);
           assert.equal(ttl, -1);
           done();
@@ -68,10 +68,10 @@ describe('Gzip Tests', function () {
     });
 
     it('should store a null value without error', function (done) {
-      redisGzipCache.set('foo2', null, function (err) {
+      redisCompressCache.set('foo2', null, function (err) {
         try {
           assert.equal(err, null);
-          redisGzipCache.get('foo2', function (err, value) {
+          redisCompressCache.get('foo2', function (err, value) {
             assert.equal(err, null);
             assert.equal(value, null);
             done();
@@ -84,8 +84,8 @@ describe('Gzip Tests', function () {
     });
 
     it('should store a value without callback', function (done) {
-      redisGzipCache.set('foo', 'baz');
-      redisGzipCache.get('foo', function (err, value) {
+      redisCompressCache.set('foo', 'baz');
+      redisCompressCache.get('foo', function (err, value) {
         assert.equal(err, null);
         assert.equal(value, 'baz');
         done();
@@ -93,7 +93,7 @@ describe('Gzip Tests', function () {
     });
 
     it('should not store an invalid value', function (done) {
-      redisGzipCache.set('foo1', undefined, function (err) {
+      redisCompressCache.set('foo1', undefined, function (err) {
         try {
           assert.notEqual(err, null);
           assert.equal(err.message, 'value cannot be undefined');
@@ -106,11 +106,11 @@ describe('Gzip Tests', function () {
     });
 
     it('should store an undefined value if permitted by isCacheableValue', function (done) {
-      assert(customRedisGzipCache.store.isCacheableValue(undefined), true);
-      customRedisGzipCache.set('foo3', undefined, function (err) {
+      assert(customRedisCompressCache.store.isCacheableValue(undefined), true);
+      customRedisCompressCache.set('foo3', undefined, function (err) {
         try {
           assert.equal(err, null);
-          customRedisGzipCache.get('foo3', function (err, data) {
+          customRedisCompressCache.get('foo3', function (err, data) {
             try {
               assert.equal(err, null);
               // redis stored undefined as 'undefined'
@@ -129,8 +129,8 @@ describe('Gzip Tests', function () {
     });
 
     it('should not store a value disallowed by isCacheableValue', function (done) {
-      assert.strictEqual(customRedisGzipCache.store.isCacheableValue('FooBarString'), false);
-      customRedisGzipCache.set('foobar', 'FooBarString', function (err) {
+      assert.strictEqual(customRedisCompressCache.store.isCacheableValue('FooBarString'), false);
+      customRedisCompressCache.set('foobar', 'FooBarString', function (err) {
         try {
           assert.notEqual(err, null);
           assert.equal(err.message, 'value cannot be FooBarString');
@@ -143,10 +143,10 @@ describe('Gzip Tests', function () {
     });
   });
 
-  describe('gzip get', function () {
+  describe('compress get', function () {
     it('should retrieve a value for a given key', function (done) {
-      redisGzipCache.set('foo', testObject, function () {
-        redisGzipCache.get('foo', function (err, result) {
+      redisCompressCache.set('foo', testObject, function () {
+        redisCompressCache.get('foo', function (err, result) {
           assert.equal(err, null);
           assert.deepEqual(result, testObject);
           done();
@@ -155,8 +155,8 @@ describe('Gzip Tests', function () {
     });
 
     it('should retrieve a value for a given key if options provided', function (done) {
-      redisGzipCache.set('foo', testObject, function () {
-        redisGzipCache.get('foo', {}, function (err, result) {
+      redisCompressCache.set('foo', testObject, function () {
+        redisCompressCache.get('foo', {}, function (err, result) {
           assert.equal(err, null);
           assert.deepEqual(result, testObject);
           done();
@@ -165,7 +165,7 @@ describe('Gzip Tests', function () {
     });
 
     it('should return null when the key is invalid', function (done) {
-      redisGzipCache.get('invalidKey', function (err, result) {
+      redisCompressCache.get('invalidKey', function (err, result) {
         assert.equal(err, null);
         assert.equal(result, null);
         done();
@@ -173,10 +173,10 @@ describe('Gzip Tests', function () {
     });
 
     it('should return an error if there is an error acquiring a connection', function (done) {
-      var pool = redisGzipCache.store._pool;
+      var pool = redisCompressCache.store._pool;
       sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
       sinon.stub(pool, 'release');
-      redisGzipCache.get('foo', function (err) {
+      redisCompressCache.get('foo', function (err) {
         pool.acquireDb.restore();
         pool.release.restore();
         assert.notEqual(err, null);
@@ -185,7 +185,7 @@ describe('Gzip Tests', function () {
     });
   });
 
-  describe('gzip uses url to override redis options', function () {
+  describe('compress uses url to override redis options', function () {
     var redisCacheByUrl;
 
     before(function () {
@@ -200,7 +200,7 @@ describe('Gzip Tests', function () {
         auth_pass: 'test_pass',
         password: 'test_pass',
         ttl: -6,
-        gzip: true
+        compress: true
       });
     });
 
@@ -225,19 +225,19 @@ describe('Gzip Tests', function () {
     });
   });
 
-  describe('gzip specific', function () {
+  describe('compress specific', function () {
     var bestSpeed;
 
     it('should compress the value being stored', function (done) {
-      redisGzipCache.set('foo', testObject, function (err) {
+      redisCompressCache.set('foo', testObject, function (err) {
         assert.equal(err, null);
-        redisGzipCache.store.getClient(function (err, redis) {
+        redisCompressCache.store.getClient(function (err, redis) {
           assert.equal(err, null);
           redis.client.strlen('foo', function (err, length) {
             assert.equal(err, null);
-            console.log('\nGZIP Best Speed');
+            console.log('\nBest Speed (gzip)');
             console.log('JSON length: ', testJson.length);
-            console.log('GZIP length: ' + length);
+            console.log('Compress length: ' + length);
             console.log('REDUCTION: ' + Math.floor((length / testJson.length) * 100) + '% of original\n');
             bestSpeed = length;
             redis.done();
@@ -247,34 +247,42 @@ describe('Gzip Tests', function () {
       });
     });
 
-    it('should allow gzip specific options', function (done) {
-      redisGzipCache.set('foo', testObject, { gzip: { level: zlib.Z_BEST_COMPRESSION } }, function (err) {
+    it('should allow compress specific options', function (done) {
+      var opts = {
+        type: 'gzip',
+        params: { level: zlib.Z_BEST_COMPRESSION }
+      };
+      redisCompressCache.set('foo', testObject, { compress: opts }, function (err) {
         assert.equal(err, null);
-        redisGzipCache.store.getClient(function (err, redis) {
+        redisCompressCache.store.getClient(function (err, redis) {
           assert.equal(err, null);
           redis.client.strlen('foo', function (err, length) {
             assert.equal(err, null);
             assert(length < bestSpeed);
-            console.log('\nGZIP Best Compression');
+            console.log('\nBest Compression (gzip)');
             console.log('JSON length: ', testJson.length);
-            console.log('GZIP length: ' + length);
+            console.log('Compress length: ' + length);
             console.log('REDUCTION: ' + Math.floor((length / testJson.length) * 100) + '% of original\n');
             redis.done();
-            done();
+            redisCompressCache.get('foo', { compress: opts }, function (err, result) {
+              assert.equal(err, null);
+              assert.deepEqual(result, testObject);
+              done();
+            });
           });
         });
       });
     });
 
-    it('should allow gzip to be turned off per command', function (done) {
-      redisGzipCache.set('foo', testObject, { gzip: false }, function (err) {
+    it('should allow compress to be turned off per command', function (done) {
+      redisCompressCache.set('foo', testObject, { compress: false }, function (err) {
         assert.equal(err, null);
-        redisGzipCache.store.getClient(function (err, redis) {
+        redisCompressCache.store.getClient(function (err, redis) {
           assert.equal(err, null);
           redis.client.strlen('foo', function (err, length) {
             assert.equal(length, testJson.length);
             redis.done();
-            redisGzipCache.get('foo', { gzip: false }, function (err, result) {
+            redisCompressCache.get('foo', { compress: false }, function (err, result) {
               assert.equal(err, null);
               assert.deepEqual(result, testObject);
               done();

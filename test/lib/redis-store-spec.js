@@ -176,8 +176,8 @@ describe('Normal Tests', function () {
 
     it('should retrieve a value for a given key if options provided', function (done) {
       var value = 'bar';
-      redisCache.set('foo', value, { gzip: true }, function () {
-        redisCache.get('foo', { gzip: true }, function (err, result) {
+      redisCache.set('foo', value, { compress: true }, function () {
+        redisCache.get('foo', { compress: true }, function (err, result) {
           assert.equal(err, null);
           assert.equal(result, value);
           done();
