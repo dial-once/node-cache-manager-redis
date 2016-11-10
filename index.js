@@ -180,6 +180,7 @@ function redisStore(args) {
       cb = options;
       options = {};
     }
+    options = options || {};
     options.parse = true;
 
     var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
