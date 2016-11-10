@@ -85,22 +85,14 @@ describe('set', function () {
     });
   });
 
-  /*
-  it('should store a null value without error', function (done) {
-    redisCache.set('foo2', null, function (err) {
-      try {
-        assert.equal(err, null);
-        redisCache.get('foo2', function (err, value) {
-          assert.equal(err, null);
-          assert.equal(value, null);
-          done();
-        });
-      } catch (e) {
-        done(e);
-      }
-    });
+  it('should not be able to store a null value (not cacheable)', function (done) {
+    try {
+      redisCache.set('foo2', null);
+      done(new Error('Null is not a valid value!'));
+    } catch (e) {
+      done();
+    }
   });
-  */
 
   it('should store a value without callback', function (done) {
     redisCache.set('foo', 'baz');
@@ -339,12 +331,16 @@ describe('isCacheableValue', function () {
     assert.equal(redisCache.store.isCacheableValue(100), true);
     assert.equal(redisCache.store.isCacheableValue(''), true);
     assert.equal(redisCache.store.isCacheableValue('test'), true);
-    //assert.equal(redisCache.store.isCacheableValue(null), true);
     done();
   });
 
   it('should return false when the value is undefined', function (done) {
     assert.equal(redisCache.store.isCacheableValue(undefined), false);
+    done();
+  });
+
+  it('should return false when the value is null', function (done) {
+    assert.equal(redisCache.store.isCacheableValue(null), false);
     done();
   });
 });
@@ -471,32 +467,24 @@ describe('wrap function', function () {
   // Simulate retrieving a user from a database
   function getUser(id, cb) {
     setTimeout(function () {
-      cb(null, {id: id, name: 'Bob'});
+      cb(null, { id: id });
     }, 100);
   }
 
   var userId = 123;
-  var key = 'user_' + userId;
-  var fromCache = true;
 
-  it('should work with wrap function', function (done) {
-
+  it('should be able to cache objects', function (done) {
     // First call to wrap should run the code
-    redisCache.wrap(key, function (cb) {
-      fromCache = false;
+    redisCache.wrap('wrap-user', function (cb) {
       getUser(userId, cb);
     }, function (err, user) {
-      assert.equal(fromCache, false);
-      assert.equal(user.name, 'Bob');
+      assert.equal(user.id, userId);
 
       // Second call to wrap should retrieve from cache
-      fromCache = true;
-      redisCache.wrap(key, function (cb) {
-        fromCache = false;
-        getUser(userId, cb);
+      redisCache.wrap('wrap-user', function (cb) {
+        getUser(userId+1, cb);
       }, function (err, user) {
-        assert.equal(user.name, 'Bob');
-        assert.equal(fromCache, true);
+        assert.equal(user.id, userId);
         done();
       });
     });
