@@ -68,19 +68,14 @@ describe('Compression Tests', function () {
       });
     });
 
-    it('should store a null value without error', function (done) {
-      redisCompressCache.set('foo2', null, function (err) {
-        try {
-          assert.equal(err, null);
-          redisCompressCache.get('foo2', function (err, value) {
-            assert.equal(err, null);
-            assert.equal(value, null);
-            done();
-          });
-        } catch(e) {
-          done(e);
-        }
-      });
+    it('should not be able to store a null value', function (done) {
+      try {
+        redisStore.set('foo2', null, function (err) {
+          done(new Error('Should not be able to store a null value'));
+        });
+      } catch(e) {
+        done();
+      }
     });
 
     it('should store a value without callback', function (done) {
