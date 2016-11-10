@@ -3,6 +3,7 @@
 var RedisPool = require('sol-redis-pool');
 var EventEmitter = require('events').EventEmitter;
 var redisUrl = require('redis-url');
+var zlib = require('zlib');
 
 /**
  * The cache manager Redis Store module
@@ -12,6 +13,11 @@ var redisUrl = require('redis-url');
  * @param {Number} args.port - The Redis server port
  * @param {Number} args.db - The Redis server db
  * @param {function} args.isCacheableValue - function to override built-in isCacheableValue function (optional)
+ * @param {boolean|Object} args.compress - (optional) Boolean / Config Object for pluggable compression.
+ *            Setting this to true will use a default gzip configuration for best speed. Passing in a config
+ *            object will forward those settings to the underlying compression implementation. Please see the
+ *            Node zlib documentation for a list of valid options for gzip:
+ *            https://nodejs.org/dist/latest-v4.x/docs/api/zlib.html#zlib_class_options
  */
 function redisStore(args) {
   var self = {
@@ -27,6 +33,20 @@ function redisStore(args) {
   redisOptions.host = redisOptions.host || '127.0.0.1';
   redisOptions.port = redisOptions.port || 6379;
   redisOptions.db = redisOptions.db || 0;
+
+  // default compress config
+  redisOptions.detect_buffers = true;
+  var compressDefault = {
+    type: 'gzip',
+    params: {
+      level: zlib.Z_BEST_SPEED
+    }
+  };
+
+  // if compress is boolean true, set default
+  if (redisOptions.compress === true) {
+    redisOptions.compress = compressDefault;
+  }
 
   var pool = new RedisPool(redisOptions, poolSettings);
 
@@ -61,6 +81,22 @@ function redisStore(args) {
       }
 
       if (opts.parse) {
+
+        if (result && opts.compress) {
+          return zlib.gunzip(result, opts.compress.params || {}, function (gzErr, gzResult) {
+            if (gzErr) {
+              return cb && cb(gzErr);
+            }
+            try {
+              gzResult = JSON.parse(gzResult);
+            } catch (e) {
+              return cb && cb(e);
+            }
+
+            return cb && cb(null, gzResult);
+          });
+        }
+
         try {
           result = JSON.parse(result);
         } catch (e) {
@@ -68,9 +104,7 @@ function redisStore(args) {
         }
       }
 
-      if (cb) {
-        cb(null, result);
-      }
+      return cb && cb(null, result);
     };
   }
 
@@ -138,11 +172,20 @@ function redisStore(args) {
    * @method get
    * @param {String} key - The cache key
    * @param {Object} [options] - The options (optional)
+   * @param {boolean|Object} options.compress - compression configuration
    * @param {Function} cb - A callback that returns a potential error and the response
    */
   self.get = function(key, options, cb) {
     if (typeof options === 'function') {
       cb = options;
+      options = {};
+    }
+    options.parse = true;
+
+    var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
+    if (compress) {
+      options.compress = (compress === true) ? compressDefault : compress;
+      key = new Buffer(key);
     }
 
     connect(function(err, conn) {
@@ -150,9 +193,7 @@ function redisStore(args) {
         return cb && cb(err);
       }
 
-      conn.get(key, handleResponse(conn, cb, {
-        parse: true
-      }));
+      conn.get(key, handleResponse(conn, cb, options));
     });
   };
 
@@ -163,6 +204,7 @@ function redisStore(args) {
    * @param {String} value - The value to set
    * @param {Object} [options] - The options (optional)
    * @param {Object} options.ttl - The ttl value
+   * @param {boolean|Object} options.compress - compression configuration
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
   self.set = function(key, value, options, cb) {
@@ -179,16 +221,34 @@ function redisStore(args) {
     options = options || {};
 
     var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
+    var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
+    if (compress === true) {
+      compress = compressDefault;
+    }
 
     connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
       var val = JSON.stringify(value) || '"undefined"';
-      if (ttl) {
-        conn.setex(key, ttl, val, handleResponse(conn, cb));
+
+      // Refactored to remove duplicate code.
+      function persist(pErr, pVal) {
+        if (pErr) {
+          return cb && cb(pErr);
+        }
+
+        if (ttl) {
+          conn.setex(key, ttl, pVal, handleResponse(conn, cb));
+        } else {
+          conn.set(key, pVal, handleResponse(conn, cb));
+        }
+      }
+
+      if (compress) {
+        zlib.gzip(val, compress.params || {}, persist);
       } else {
-        conn.set(key, val, handleResponse(conn, cb));
+        persist(null, val);
       }
     });
   };
