@@ -26,6 +26,7 @@ function redisStore(args) {
 
   redisOptions.host = redisOptions.host || '127.0.0.1';
   redisOptions.port = redisOptions.port || 6379;
+  redisOptions.db = redisOptions.db || 0;
 
   var pool = new RedisPool(redisOptions, poolSettings);
 
@@ -39,19 +40,7 @@ function redisStore(args) {
    * @param {Function} cb - A callback that returns
    */
   function connect(cb) {
-    pool.acquire(function(err, conn) {
-      if (err) {
-        pool.release(conn);
-        return cb(err);
-      }
-
-      /* istanbul ignore else */
-      if (args.db || args.db === 0) {
-        conn.select(args.db);
-      }
-
-      cb(null, conn);
-    });
+    pool.acquireDb(cb, redisOptions.db);
   }
 
   /**
@@ -277,14 +266,14 @@ function redisStore(args) {
   /**
    * Specify which values should and should not be cached.
    * If the function returns true, it will be stored in cache.
-   * By default, it caches everything except null and undefined values.
+   * By default, it caches everything except undefined values.
    * Can be overriden via standard node-cache-manager options.
    * @method isCacheableValue
    * @param {String} value - The value to check
    * @return {Boolean} - Returns true if the value is cacheable, otherwise false.
    */
   self.isCacheableValue = args.isCacheableValue || function(value) {
-    return value !== null && value !== undefined;
+    return value !== undefined;
   };
 
   /**
