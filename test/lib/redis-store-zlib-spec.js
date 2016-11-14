@@ -283,6 +283,66 @@ describe('Compression Tests', function () {
       });
     });
   });
+
+  describe('wrap function', function () {
+
+    // Simulate retrieving a user from a database
+    function getUser(id, cb) {
+      setTimeout(function () {
+        cb(null, { id: id });
+      }, 100);
+    }
+
+    // Simulate retrieving a user from a database with Promise
+    function getUserPromise(id) {
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          resolve({ id: id });
+        }, 100);
+      });
+    }
+
+    it('should be able to cache objects', function (done) {
+      var userId = 123;
+
+      // First call to wrap should run the code
+      redisCompressCache.wrap('wrap-compress', function (cb) {
+        getUser(userId, cb);
+      }, function (err, user) {
+        assert.equal(user.id, userId);
+
+        // Second call to wrap should retrieve from cache
+        redisCompressCache.wrap('wrap-compress', function (cb) {
+          getUser(userId+1, cb);
+        }, function (err, user) {
+          assert.equal(user.id, userId);
+          done();
+        });
+      });
+    });
+
+    it('should work with promises', function () {
+      var userId = 123;
+
+      // First call to wrap should run the code
+      return redisCompressCache
+        .wrap('wrap-compress-promise', function () {
+          return getUserPromise(userId);
+        })
+        .then(function (user) {
+          assert.equal(user.id, userId);
+
+          // Second call to wrap should retrieve from cache
+          return redisCompressCache
+            .wrap('wrap-compress-promise', function () {
+              return getUserPromise(userId+1);
+            })
+            .then(function (user) {
+              assert.equal(user.id, userId);
+            });
+        });
+    });
+  });
 });
 
 
