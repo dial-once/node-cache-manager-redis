@@ -1,6 +1,6 @@
 {
   "name": "cache-manager-redis",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Redis store for the node-cache-manager",
   "main": "index.js",
   "scripts": {
