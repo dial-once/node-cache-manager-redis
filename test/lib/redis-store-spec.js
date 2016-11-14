@@ -471,9 +471,18 @@ describe('wrap function', function () {
     }, 100);
   }
 
-  var userId = 123;
+  // Simulate retrieving a user from a database with Promise
+  function getUserPromise(id) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve({ id: id });
+      }, 100);
+    });
+  }
 
   it('should be able to cache objects', function (done) {
+    var userId = 123;
+
     // First call to wrap should run the code
     redisCache.wrap('wrap-user', function (cb) {
       getUser(userId, cb);
@@ -488,5 +497,27 @@ describe('wrap function', function () {
         done();
       });
     });
+  });
+
+  it('should work with promises', function () {
+    var userId = 123;
+
+    // First call to wrap should run the code
+    return redisCache
+      .wrap('wrap-promise', function () {
+        return getUserPromise(userId);
+      })
+      .then(function (user) {
+        assert.equal(user.id, userId);
+
+        // Second call to wrap should retrieve from cache
+        return redisCache
+          .wrap('wrap-promise', function () {
+            return getUserPromise(userId+1);
+          })
+          .then(function (user) {
+            assert.equal(user.id, userId);
+          });
+      });
   });
 });
