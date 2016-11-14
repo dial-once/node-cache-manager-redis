@@ -40,7 +40,7 @@ redisCache.store.events.on('redisError', function(error) {
 	console.log(error);
 });
 
-redisCache.set('foo', 'bar', ttl, function(err) {
+redisCache.set('foo', 'bar', { ttl: ttl }, function(err) {
     if (err) {
       throw err;
     }
@@ -65,7 +65,7 @@ var key = 'user_' + userId;
 // Note: ttl is optional in wrap()
 redisCache.wrap(key, function (cb) {
     getUser(userId, cb);
-}, ttl, function (err, user) {
+}, { ttl: ttl }, function (err, user) {
     console.log(user);
 
     // Second time fetches user from redisCache
@@ -94,7 +94,7 @@ key2 = 'user_' + userId;
 ttl = 5;
 
 // Sets in all caches.
-multiCache.set('foo2', 'bar2', ttl, function(err) {
+multiCache.set('foo2', 'bar2', { ttl: ttl }, function(err) {
     if (err) { throw err; }
 
     // Fetches from highest priority cache that has the key.
@@ -110,7 +110,7 @@ multiCache.set('foo2', 'bar2', ttl, function(err) {
 // Note: ttl is optional in wrap()
 multiCache.wrap(key2, function (cb) {
     getUser(userId2, cb);
-}, ttl, function (err, user) {
+}, { ttl: ttl }, function (err, user) {
     console.log(user);
 
     // Second time fetches user from memoryCache, since it's highest priority.
@@ -152,7 +152,7 @@ var redisCache = cacheManager.caching({
 	compress: true
 });
 
-// Or on a per command basis. (only applies to get / set commands)
+// Or on a per command basis. (only applies to get / set / wrap)
 redisCache.set('foo', 'bar', { compress: false }, function(err) {
     if (err) {
       throw err;
