@@ -40,7 +40,7 @@ redisCache.store.events.on('redisError', function(error) {
 	console.log(error);
 });
 
-redisCache.set('foo', 'bar', ttl, function(err) {
+redisCache.set('foo', 'bar', { ttl: ttl }, function(err) {
     if (err) {
       throw err;
     }
@@ -65,7 +65,7 @@ var key = 'user_' + userId;
 // Note: ttl is optional in wrap()
 redisCache.wrap(key, function (cb) {
     getUser(userId, cb);
-}, ttl, function (err, user) {
+}, { ttl: ttl }, function (err, user) {
     console.log(user);
 
     // Second time fetches user from redisCache
@@ -94,7 +94,7 @@ key2 = 'user_' + userId;
 ttl = 5;
 
 // Sets in all caches.
-multiCache.set('foo2', 'bar2', ttl, function(err) {
+multiCache.set('foo2', 'bar2', { ttl: ttl }, function(err) {
     if (err) { throw err; }
 
     // Fetches from highest priority cache that has the key.
@@ -110,7 +110,7 @@ multiCache.set('foo2', 'bar2', ttl, function(err) {
 // Note: ttl is optional in wrap()
 multiCache.wrap(key2, function (cb) {
     getUser(userId2, cb);
-}, ttl, function (err, user) {
+}, { ttl: ttl }, function (err, user) {
     console.log(user);
 
     // Second time fetches user from memoryCache, since it's highest priority.
@@ -123,6 +123,69 @@ multiCache.wrap(key2, function (cb) {
     });
 });
 ```
+
+### Using a URL instead of options (if url is correct it overrides options host, port, db, auth_pass and ttl)
+Urls should be in this format `redis://[:password@]host[:port][/db-number][?ttl=value]`
+```js
+var cacheManager = require('cache-manager');
+var redisStore = require('cache-manager-redis');
+
+var redisCache = cacheManager.caching({
+	store: redisStore,
+	url: 'redis://:XXXX@localhost:6379/0?ttl=600'
+});
+
+// proceed with redisCache
+```
+
+### Seamless compression (currently only supports Node's built-in zlib / gzip implementation)
+
+```js
+// Compression can be configured for the entire cache.
+var redisCache = cacheManager.caching({
+	store: redisStore,
+	host: 'localhost', // default value
+	port: 6379, // default value
+	auth_pass: 'XXXXX',
+	db: 0,
+	ttl: 600,
+	compress: true
+});
+
+// Or on a per command basis. (only applies to get / set / wrap)
+redisCache.set('foo', 'bar', { compress: false }, function(err) {
+    if (err) {
+      throw err;
+    }
+
+    redisCache.get('foo', { compress: false }, function(err, result) {
+        console.log(result);
+        // >> 'bar'
+        redisCache.del('foo', function(err) {});
+    });
+});
+
+// Setting the compress option to true will enable a default configuration 
+// for best speed using gzip. For advanced use, a configuration object may 
+// also be passed with implementation-specific parameters. Currently, only 
+// the built-in zlib/gzip implementation is supported.
+var zlib = require('zlib');
+var redisCache = cacheManager.caching({
+	store: redisStore,
+	host: 'localhost', // default value
+	port: 6379, // default value
+	auth_pass: 'XXXXX',
+	db: 0,
+	ttl: 600,
+	compress: {
+	  type: 'gzip',
+	  params: {
+	    level: zlib.Z_BEST_COMPRESSION
+	  } 
+	}
+});
+```
+Currently, all implementation-specific configuration parameters are passed directly to the `zlib.gzip` and `zlib.gunzip` methods. Please see the [Node Zlib documentation](https://nodejs.org/dist/latest-v6.x/docs/api/zlib.html#zlib_class_options) for available options.
 
 Tests
 -----
