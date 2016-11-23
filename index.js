@@ -274,7 +274,7 @@ function redisStore(args) {
 
       var args = []
 
-      if ( Object.prototype.toString.call( key ) === '[object Array]' ) {
+      if ( Array.isArray(key) ) {
         key.forEach(function(k) {
           args.push(k);
         });
