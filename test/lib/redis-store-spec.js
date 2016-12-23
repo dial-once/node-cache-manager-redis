@@ -86,12 +86,12 @@ describe('set', function () {
   });
 
   it('should not be able to store a null value (not cacheable)', function (done) {
-    try {
-      redisCache.set('foo2', null);
+    redisCache.set('foo2', null, function (err) {
+      if (err) {
+        return done();
+      }
       done(new Error('Null is not a valid value!'));
-    } catch (e) {
-      done();
-    }
+    });
   });
 
   it('should store a value without callback', function (done) {
