@@ -183,6 +183,13 @@ function redisStore(args) {
     options = options || {};
     options.parse = true;
 
+    var resolve, reject;
+    var promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej
+    });
+    cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
+
     var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
     if (compress) {
       options.compress = (compress === true) ? compressDefault : compress;
@@ -196,6 +203,8 @@ function redisStore(args) {
 
       conn.get(key, handleResponse(conn, cb, options));
     });
+
+    return promise;
   };
 
   /**
