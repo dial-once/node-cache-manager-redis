@@ -224,6 +224,13 @@ function redisStore(args) {
       options = {};
     }
 
+    var resolve, reject;
+    var promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej
+    });
+    cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
+
     if (!self.isCacheableValue(value)) {
       return cb && cb(new Error('value cannot be ' + value));
     }
@@ -261,6 +268,8 @@ function redisStore(args) {
         persist(null, val);
       }
     });
+
+    return promise;
   };
 
   /**
