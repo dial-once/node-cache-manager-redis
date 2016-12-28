@@ -73,7 +73,9 @@ describe('set', function () {
   });
 
   it('should reject promise on error', function (done) {
-    redisCache.set('foo', null).catch(() => done());
+    redisCache.set('foo', null)
+      .then(() => done(new Error ('Should reject')))
+      .catch(() => done());
   });
 
   it('should store a value without ttl', function (done) {
@@ -187,6 +189,7 @@ describe('get', function () {
     sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
     sinon.stub(pool, 'release');
     redisCache.get('foo')
+      .then(() => done(new Error ('Should reject')))
       .catch(() => done())
       .then(() => {
         pool.acquireDb.restore();
