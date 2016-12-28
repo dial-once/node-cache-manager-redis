@@ -29,6 +29,7 @@ function redisStore(args) {
   /* istanbul ignore next */
   var redisOptions = getFromUrl(args) || args || {};
   var poolSettings = redisOptions;
+  var Promise = args.promiseDependency || global.Promise;
 
   redisOptions.host = redisOptions.host || '127.0.0.1';
   redisOptions.port = redisOptions.port || 6379;
