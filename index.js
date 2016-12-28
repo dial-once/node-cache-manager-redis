@@ -175,6 +175,7 @@ function redisStore(args) {
    * @param {Object} [options] - The options (optional)
    * @param {boolean|Object} options.compress - compression configuration
    * @param {Function} cb - A callback that returns a potential error and the response
+   * @returns {Promise}
    */
   self.get = function(key, options, cb) {
     return new Promise(function(resolve, reject) {
@@ -212,6 +213,7 @@ function redisStore(args) {
    * @param {Object} options.ttl - The ttl value
    * @param {boolean|Object} options.compress - compression configuration
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
+   * @returns {Promise}
    */
   self.set = function(key, value, options, cb) {
     return new Promise(function(resolve, reject) {
