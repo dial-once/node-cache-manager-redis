@@ -196,7 +196,7 @@ function redisStore(args) {
 
       connect(function(err, conn) {
         if (err) {
-          return cb && cb(err);
+          return cb(err);
         }
 
         conn.get(key, handleResponse(conn, cb, options));
@@ -225,7 +225,7 @@ function redisStore(args) {
       cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
 
       if (!self.isCacheableValue(value)) {
-        return cb && cb(new Error('value cannot be ' + value));
+        return cb(new Error('value cannot be ' + value));
       }
 
       options = options || {};
@@ -238,14 +238,14 @@ function redisStore(args) {
 
       connect(function(err, conn) {
         if (err) {
-          return cb && cb(err);
+          return cb(err);
         }
         var val = JSON.stringify(value) || '"undefined"';
 
         // Refactored to remove duplicate code.
         function persist(pErr, pVal) {
           if (pErr) {
-            return cb && cb(pErr);
+            return cb(pErr);
           }
 
           if (ttl) {
