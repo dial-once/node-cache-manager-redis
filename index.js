@@ -29,6 +29,7 @@ function redisStore(args) {
   /* istanbul ignore next */
   var redisOptions = getFromUrl(args) || args || {};
   var poolSettings = redisOptions;
+  var Promise = args.promiseDependency || global.Promise;
 
   redisOptions.host = redisOptions.host || '127.0.0.1';
   redisOptions.port = redisOptions.port || 6379;
@@ -174,27 +175,32 @@ function redisStore(args) {
    * @param {Object} [options] - The options (optional)
    * @param {boolean|Object} options.compress - compression configuration
    * @param {Function} cb - A callback that returns a potential error and the response
+   * @returns {Promise}
    */
   self.get = function(key, options, cb) {
-    if (typeof options === 'function') {
-      cb = options;
-      options = {};
-    }
-    options = options || {};
-    options.parse = true;
+    return new Promise(function(resolve, reject) {
+      if (typeof options === 'function') {
+        cb = options;
+        options = {};
+      }
+      options = options || {};
+      options.parse = true;
 
-    var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
-    if (compress) {
-      options.compress = (compress === true) ? compressDefault : compress;
-      key = new Buffer(key);
-    }
+      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
+      var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
+      if (compress) {
+        options.compress = (compress === true) ? compressDefault : compress;
+        key = new Buffer(key);
       }
 
-      conn.get(key, handleResponse(conn, cb, options));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
+        }
+
+        conn.get(key, handleResponse(conn, cb, options));
+      });
     });
   };
 
@@ -207,50 +213,54 @@ function redisStore(args) {
    * @param {Object} options.ttl - The ttl value
    * @param {boolean|Object} options.compress - compression configuration
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
+   * @returns {Promise}
    */
   self.set = function(key, value, options, cb) {
-
-    if (typeof options === 'function') {
-      cb = options;
-      options = {};
-    }
-
-    if (!self.isCacheableValue(value)) {
-      return cb(new Error('value cannot be ' + value));
-    }
-
-    options = options || {};
-
-    var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
-    var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
-    if (compress === true) {
-      compress = compressDefault;
-    }
-
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
+    return new Promise(function(resolve, reject) {
+      if (typeof options === 'function') {
+        cb = options;
+        options = {};
       }
-      var val = JSON.stringify(value) || '"undefined"';
 
-      // Refactored to remove duplicate code.
-      function persist(pErr, pVal) {
-        if (pErr) {
-          return cb && cb(pErr);
+      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
+
+      if (!self.isCacheableValue(value)) {
+        return cb(new Error('value cannot be ' + value));
+      }
+
+      options = options || {};
+
+      var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
+      var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
+      if (compress === true) {
+        compress = compressDefault;
+      }
+
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
+        }
+        var val = JSON.stringify(value) || '"undefined"';
+
+        // Refactored to remove duplicate code.
+        function persist(pErr, pVal) {
+          if (pErr) {
+            return cb(pErr);
+          }
+
+          if (ttl) {
+            conn.setex(key, ttl, pVal, handleResponse(conn, cb));
+          } else {
+            conn.set(key, pVal, handleResponse(conn, cb));
+          }
         }
 
-        if (ttl) {
-          conn.setex(key, ttl, pVal, handleResponse(conn, cb));
+        if (compress) {
+          zlib.gzip(val, compress.params || {}, persist);
         } else {
-          conn.set(key, pVal, handleResponse(conn, cb));
+          persist(null, val);
         }
-      }
-
-      if (compress) {
-        zlib.gzip(val, compress.params || {}, persist);
-      } else {
-        persist(null, val);
-      }
+      });
     });
   };
 

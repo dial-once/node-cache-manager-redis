@@ -60,6 +60,24 @@ describe ('initialization', function () {
 });
 
 describe('set', function () {
+  it('should return a promise', function (done) {
+    assert.ok(redisCache.set('foo', 'bar') instanceof Promise);
+    done();
+  });
+
+  it('should resolve promise on success', function (done) {
+    redisCache.set('foo', 'bar').then(result => {
+      assert.equal(result, 'OK');
+      done();
+    });
+  });
+
+  it('should reject promise on error', function (done) {
+    redisCache.set('foo', null)
+      .then(() => done(new Error ('Should reject')))
+      .catch(() => done());
+  });
+
   it('should store a value without ttl', function (done) {
     redisCache.set('foo', 'bar', function (err) {
       assert.equal(err, null);
@@ -86,12 +104,12 @@ describe('set', function () {
   });
 
   it('should not be able to store a null value (not cacheable)', function (done) {
-    try {
-      redisCache.set('foo2', null);
+    redisCache.set('foo2', null, function (err) {
+      if (err) {
+        return done();
+      }
       done(new Error('Null is not a valid value!'));
-    } catch (e) {
-      done();
-    }
+    });
   });
 
   it('should store a value without callback', function (done) {
@@ -152,6 +170,33 @@ describe('set', function () {
 });
 
 describe('get', function () {
+  it('should return a promise', function (done) {
+    assert.ok(redisCache.get('foo') instanceof Promise);
+    done();
+  });
+
+  it('should resolve promise on success', function (done) {
+    redisCache.set('foo', 'bar')
+      .then(() => redisCache.get('foo'))
+      .then(result => {
+        assert.equal(result, 'bar');
+        done();
+      });
+  });
+
+  it('should reject promise on error', function (done) {
+    var pool = redisCache.store._pool;
+    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sinon.stub(pool, 'release');
+    redisCache.get('foo')
+      .then(() => done(new Error ('Should reject')))
+      .catch(() => done())
+      .then(() => {
+        pool.acquireDb.restore();
+        pool.release.restore();
+      })
+  });
+
   it('should retrieve a value for a given key', function (done) {
     var value = 'bar';
     redisCache.set('foo', value, function () {
