@@ -315,7 +315,7 @@ function redisStore(args) {
   };
 
   /**
-   * Returns all keys matching pattern.
+   * Returns all keys matching pattern using the SCAN command.
    * @method keys
    * @param {String} pattern - The pattern used to match keys
    * @param {Function} cb - A callback that returns a potential error and the response
@@ -330,7 +330,32 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      conn.keys(pattern, handleResponse(conn, cb));
+
+      // Use an object to dedupe as scan can return duplicates
+      var keysObj = {};
+      var count = 100;
+
+      (function nextBatch(cursorId) {
+        conn.scan(cursorId, 'match', pattern, 'count', count, function (err, result) {
+          if (err) {
+            return cb && cb(err);
+          }
+
+          var nextCursorId = Number(result[0]);
+          var keys = result[1];
+
+          for (var i = 0, l = keys.length; i < l; ++i) {
+            keysObj[keys[i]] = 1;
+          }
+
+          if (nextCursorId !== 0) {
+            return nextBatch(nextCursorId);
+          }
+
+          pool.release(conn);
+          return cb && cb(null, Object.keys(keysObj));
+        })
+      })(0);
     });
   };
 
