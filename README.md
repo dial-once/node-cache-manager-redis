@@ -79,13 +79,37 @@ redisCache.wrap(key, function (cb) {
 // The del() method accepts a single key or array of keys,
 // with or without a callback.
 redisCache.set('foo', 'bar', function () {
-  redisCache.set('bar', 'baz', function() {
-    redisCache.set('baz', 'foo', function() {
-      redisCache.del('foo');
-      redisCache.del(['bar', 'baz'], function() { });
+    redisCache.set('bar', 'baz', function() {
+        redisCache.set('baz', 'foo', function() {
+          redisCache.del('foo');
+          redisCache.del(['bar', 'baz'], function() { });
+        });
     });
-  });
 });
+
+// The keys() method uses the Redis SCAN command and accepts
+// optional `pattern` and `options` arguments. The `pattern`
+// must be a Redis glob-style string and defaults to '*'. The
+// options argument must be an object and accepts a single
+// `scanCount` property, which determines the number of elements
+// returned internally per call to SCAN. The default `scanCount`
+// is 100.
+redisCache.set('foo', 'bar', function () {
+    redisCache.set('far', 'boo', function () {
+        redisCache.keys('fo*', function (err, arrayOfKeys) {
+            // arrayOfKeys: ['foo']
+        });
+        
+        redisCache.keys(function (err, arrayOfKeys) {
+            // arrayOfKeys: ['foo', 'far']
+        });
+        
+        redisCache.keys('fa*', { scanCount: 10 }, function (err, arrayOfKeys) {
+            // arrayOfKeys: ['far']
+        });
+    });
+});
+
 ```
 
 ### Multi-store
