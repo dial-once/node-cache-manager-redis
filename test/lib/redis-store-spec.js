@@ -35,6 +35,12 @@ before(function () {
   });
 });
 
+beforeEach(function(done) {
+  redisCache.reset(function() {
+    done();
+  });
+});
+
 describe ('initialization', function () {
 
   it('should create a store with password instead of auth_pass (auth_pass is deprecated for redis > 2.5)', function (done) {
@@ -359,22 +365,48 @@ describe('ttl', function () {
 describe('keys', function () {
   it('should return an array of keys for the given pattern', function (done) {
     redisCache.set('foo', 'bar', function () {
-      redisCache.keys('f*', function (err, arrayOfKeys) {
-        assert.equal(err, null);
-        assert.notEqual(arrayOfKeys, null);
-        assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
-        done();
+      redisCache.set('far', 'boo', function () {
+        redisCache.set('faz', 'bam', function () {
+          redisCache.keys('f*', function (err, arrayOfKeys) {
+            assert.equal(err, null);
+            assert.notEqual(arrayOfKeys, null);
+            assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
+            assert.equal(arrayOfKeys.length, 3);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('should accept a scanCount option', function (done) {
+    redisCache.set('foo', 'bar', function () {
+      redisCache.set('far', 'boo', function () {
+        redisCache.set('faz', 'bam', function () {
+          redisCache.keys('f*', function (err, arrayOfKeys) {
+            assert.equal(err, null);
+            assert.notEqual(arrayOfKeys, null);
+            assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
+            assert.equal(arrayOfKeys.length, 3);
+            done();
+          });
+        });
       });
     });
   });
 
   it('should return an array of keys without pattern', function (done) {
     redisCache.set('foo', 'bar', function () {
-      redisCache.keys(function (err, arrayOfKeys) {
-        assert.equal(err, null);
-        assert.notEqual(arrayOfKeys, null);
-        assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
-        done();
+      redisCache.set('far', 'boo', function () {
+        redisCache.set('faz', 'bam', function () {
+          redisCache.keys(function (err, arrayOfKeys) {
+            assert.equal(err, null);
+            assert.notEqual(arrayOfKeys, null);
+            assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
+            assert.equal(arrayOfKeys.length, 3);
+            done();
+          });
+        });
       });
     });
   });
