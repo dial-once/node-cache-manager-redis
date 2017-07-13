@@ -282,7 +282,7 @@ function redisStore(args) {
         return cb && cb(err);
       }
 
-      if (Object.prototype.toString.call(key) === '[object Array]') {
+      if (Array.isArray(key)) {
         var multi = conn.multi();
         for (var i = 0, l = key.length; i < l; ++i) {
           multi.del(key[i]);
