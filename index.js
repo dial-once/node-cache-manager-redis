@@ -360,7 +360,7 @@ function redisStore(args) {
 
       // Use an object to dedupe as scan can return duplicates
       var keysObj = {};
-      var scanCount = options.scanCount || 100;
+      var scanCount = Number(options.scanCount) || 100;
 
       (function nextBatch(cursorId) {
         conn.scan(cursorId, 'match', pattern, 'count', scanCount, function (err, result) {
