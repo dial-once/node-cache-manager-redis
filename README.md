@@ -75,6 +75,17 @@ redisCache.wrap(key, function (cb) {
         console.log(user);
     });
 });
+
+// The del() method accepts a single key or array of keys,
+// with or without a callback.
+redisCache.set('foo', 'bar', function () {
+  redisCache.set('bar', 'baz', function() {
+    redisCache.set('baz', 'foo', function() {
+      redisCache.del('foo');
+      redisCache.del(['bar', 'baz'], function() { });
+    });
+  });
+});
 ```
 
 ### Multi-store

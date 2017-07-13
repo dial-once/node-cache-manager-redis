@@ -267,7 +267,7 @@ function redisStore(args) {
   /**
    * Delete value of a given key
    * @method del
-   * @param {String} key - The cache key
+   * @param {String|Array} key - The cache key or array of keys to delete
    * @param {Object} [options] - The options (optional)
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
@@ -281,7 +281,17 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      conn.del(key, handleResponse(conn, cb));
+
+      if (Object.prototype.toString.call(key) === '[object Array]') {
+        var multi = conn.multi();
+        for (var i = 0, l = key.length; i < l; ++i) {
+          multi.del(key[i]);
+        }
+        multi.exec(handleResponse(conn, cb));
+      }
+      else {
+        conn.del(key, handleResponse(conn, cb));
+      }
     });
   };
 

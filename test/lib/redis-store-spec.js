@@ -257,6 +257,30 @@ describe('del', function () {
     });
   });
 
+  it('should delete multiple values for a given array of keys', function (done) {
+    redisCache.set('foo', 'bar', function () {
+      redisCache.set('bar', 'baz', function () {
+        redisCache.set('baz', 'foo', function () {
+          redisCache.del(['foo', 'bar', 'baz'], function (err) {
+            assert.equal(err, null);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('should delete multiple values for a given array of keys without callback', function (done) {
+    redisCache.set('foo', 'bar', function () {
+      redisCache.set('bar', 'baz', function () {
+        redisCache.set('baz', 'foo', function () {
+          redisCache.del(['foo', 'bar', 'baz']);
+          done();
+        });
+      });
+    });
+  });
+
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
     sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
