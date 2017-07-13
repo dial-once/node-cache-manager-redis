@@ -383,7 +383,7 @@ describe('keys', function () {
     redisCache.set('foo', 'bar', function () {
       redisCache.set('far', 'boo', function () {
         redisCache.set('faz', 'bam', function () {
-          redisCache.keys('f*', function (err, arrayOfKeys) {
+          redisCache.keys('f*', { scanCount: 10 }, function (err, arrayOfKeys) {
             assert.equal(err, null);
             assert.notEqual(arrayOfKeys, null);
             assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
@@ -400,6 +400,22 @@ describe('keys', function () {
       redisCache.set('far', 'boo', function () {
         redisCache.set('faz', 'bam', function () {
           redisCache.keys(function (err, arrayOfKeys) {
+            assert.equal(err, null);
+            assert.notEqual(arrayOfKeys, null);
+            assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
+            assert.equal(arrayOfKeys.length, 3);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('should accept scanCount option without pattern', function (done) {
+    redisCache.set('foo', 'bar', function () {
+      redisCache.set('far', 'boo', function () {
+        redisCache.set('faz', 'bam', function () {
+          redisCache.keys({ scanCount: 10 }, function (err, arrayOfKeys) {
             assert.equal(err, null);
             assert.notEqual(arrayOfKeys, null);
             assert.notEqual(arrayOfKeys.indexOf('foo'), -1);
