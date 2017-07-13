@@ -186,7 +186,7 @@ function redisStore(args) {
       options = options || {};
       options.parse = true;
 
-      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
+      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result);
 
       var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
       if (compress) {
@@ -222,7 +222,7 @@ function redisStore(args) {
         options = {};
       }
 
-      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
+      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result);
 
       if (!self.isCacheableValue(value)) {
         return cb(new Error('value cannot be ' + value));
