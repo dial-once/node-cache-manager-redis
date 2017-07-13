@@ -351,20 +351,20 @@ function redisStore(args) {
             return cb && cb(err);
           }
 
-          var nextCursorId = Number(result[0]);
+          var nextCursorId = result[0];
           var keys = result[1];
 
           for (var i = 0, l = keys.length; i < l; ++i) {
             keysObj[keys[i]] = 1;
           }
 
-          if (nextCursorId !== 0) {
+          if (nextCursorId !== '0') {
             return nextBatch(nextCursorId);
           }
 
           pool.release(conn);
           return cb && cb(null, Object.keys(keysObj));
-        })
+        });
       })(0);
     });
   };
