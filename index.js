@@ -327,17 +327,27 @@ function redisStore(args) {
   /**
    * Returns all keys matching pattern using the SCAN command.
    * @method keys
-   * @param {String} pattern - The pattern used to match keys
-   * @param {Object} [options] - The options (optional)
+   * @param {String} [pattern] - The pattern used to match keys (default: *)
+   * @param {Object} [options] - The options (default: {})
    * @param {number} [options.scanCount] - The number of keys to traverse with each call to SCAN (default: 100)
    * @param {Function} cb - A callback that returns a potential error and the response
    */
   self.keys = function(pattern, options, cb) {
+
+    // Account for all argument permutations.
+    // Only cb supplied.
     if (typeof pattern === 'function') {
       cb = pattern;
-      pattern = '*';
       options = {};
+      pattern = '*';
     }
+    // options and cb supplied.
+    else if (typeof pattern === 'object') {
+      cb = options;
+      options = pattern;
+      pattern = '*';
+    }
+    // pattern and cb supplied.
     else if (typeof options === 'function') {
       cb = options;
       options = {};
