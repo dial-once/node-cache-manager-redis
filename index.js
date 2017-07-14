@@ -365,7 +365,7 @@ function redisStore(args) {
       (function nextBatch(cursorId) {
         conn.scan(cursorId, 'match', pattern, 'count', scanCount, function (err, result) {
           if (err) {
-            return cb && cb(err);
+            handleResponse(conn, cb)(err);
           }
 
           var nextCursorId = result[0];
@@ -379,8 +379,7 @@ function redisStore(args) {
             return nextBatch(nextCursorId);
           }
 
-          pool.release(conn);
-          return cb && cb(null, Object.keys(keysObj));
+          handleResponse(conn, cb)(null, Object.keys(keysObj));
         });
       })(0);
     });
