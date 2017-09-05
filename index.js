@@ -186,7 +186,7 @@ function redisStore(args) {
       options = options || {};
       options.parse = true;
 
-      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
+      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result);
 
       var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
       if (compress) {
@@ -222,7 +222,7 @@ function redisStore(args) {
         options = {};
       }
 
-      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result)
+      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result);
 
       if (!self.isCacheableValue(value)) {
         return cb(new Error('value cannot be ' + value));
@@ -267,7 +267,7 @@ function redisStore(args) {
   /**
    * Delete value of a given key
    * @method del
-   * @param {String} key - The cache key
+   * @param {String|Array} key - The cache key or array of keys to delete
    * @param {Object} [options] - The options (optional)
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
@@ -281,7 +281,17 @@ function redisStore(args) {
       if (err) {
         return cb && cb(err);
       }
-      conn.del(key, handleResponse(conn, cb));
+
+      if (Array.isArray(key)) {
+        var multi = conn.multi();
+        for (var i = 0, l = key.length; i < l; ++i) {
+          multi.del(key[i]);
+        }
+        multi.exec(handleResponse(conn, cb));
+      }
+      else {
+        conn.del(key, handleResponse(conn, cb));
+      }
     });
   };
 
@@ -315,22 +325,63 @@ function redisStore(args) {
   };
 
   /**
-   * Returns all keys matching pattern.
+   * Returns all keys matching pattern using the SCAN command.
    * @method keys
-   * @param {String} pattern - The pattern used to match keys
+   * @param {String} [pattern] - The pattern used to match keys (default: *)
+   * @param {Object} [options] - The options (default: {})
+   * @param {number} [options.scanCount] - The number of keys to traverse with each call to SCAN (default: 100)
    * @param {Function} cb - A callback that returns a potential error and the response
    */
-  self.keys = function(pattern, cb) {
+  self.keys = function(pattern, options, cb) {
+
+    // Account for all argument permutations.
+    // Only cb supplied.
     if (typeof pattern === 'function') {
       cb = pattern;
+      options = {};
       pattern = '*';
+    }
+    // options and cb supplied.
+    else if (typeof pattern === 'object') {
+      cb = options;
+      options = pattern;
+      pattern = '*';
+    }
+    // pattern and cb supplied.
+    else if (typeof options === 'function') {
+      cb = options;
+      options = {};
     }
 
     connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
       }
-      conn.keys(pattern, handleResponse(conn, cb));
+
+      // Use an object to dedupe as scan can return duplicates
+      var keysObj = {};
+      var scanCount = Number(options.scanCount) || 100;
+
+      (function nextBatch(cursorId) {
+        conn.scan(cursorId, 'match', pattern, 'count', scanCount, function (err, result) {
+          if (err) {
+            handleResponse(conn, cb)(err);
+          }
+
+          var nextCursorId = result[0];
+          var keys = result[1];
+
+          for (var i = 0, l = keys.length; i < l; ++i) {
+            keysObj[keys[i]] = 1;
+          }
+
+          if (nextCursorId !== '0') {
+            return nextBatch(nextCursorId);
+          }
+
+          handleResponse(conn, cb)(null, Object.keys(keysObj));
+        });
+      })(0);
     });
   };
 

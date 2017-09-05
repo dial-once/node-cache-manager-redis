@@ -42,6 +42,12 @@ describe('Compression Tests', function () {
     testJson = JSON.stringify(testObject);
   });
 
+  beforeEach(function(done) {
+    redisCompressCache.reset(function () {
+      done();
+    });
+  });
+
   describe('compress set', function () {
     it('should store a value without ttl', function (done) {
       redisCompressCache.set('foo', 'bar', function (err) {
