@@ -277,6 +277,27 @@ function redisStore(args) {
       options = {};
     }
 
+    var args = [];
+
+    if (Array.isArray(key)) {
+      key.forEach(function(k) {
+        args.push(k);
+      });
+
+    } else {
+      args.push(key);
+    }
+
+    args.push(handleResponse(conn, cb));
+    conn.del.apply(conn, args);
+
+    connect(function(err, conn) {
+      if (err) {
+        return cb && cb(err);
+      }
+      conn.del(key, handleResponse(conn, cb));
+    });
+
     connect(function(err, conn) {
       if (err) {
         return cb && cb(err);
