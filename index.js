@@ -268,10 +268,11 @@ function redisStore(args = {}) {
    * @param {String|Array} key - The cache key or array of keys to delete
    * @param {Object} [options] - The options (optional)
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
+   * @returns {Promise}
    */
   self.del = function(key, options, cb) {
     return new Promise((resolve, reject) => {
-      cb = cb || ((err, result) => err ? reject(err) : resolve(result));
+      cb = cb || ((err) => err ? reject(err) : resolve('OK'));
 
       if (typeof options === 'function') {
         cb = options;
@@ -280,7 +281,7 @@ function redisStore(args = {}) {
 
       connect(function(err, conn) {
         if (err) {
-          return cb && cb(err);
+          return cb(err);
         }
 
         if (Array.isArray(key)) {
@@ -301,13 +302,17 @@ function redisStore(args = {}) {
    * Delete all the keys of the currently selected DB
    * @method reset
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
+   * @returns {Promise}
    */
   self.reset = function(cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      conn.flushdb(handleResponse(conn, cb));
+    return new Promise((resolve, reject) => {
+      cb = cb || (err => err ? reject(err) : resolve('OK'));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
+        }
+        conn.flushdb(handleResponse(conn, cb));
+      });
     });
   };
 

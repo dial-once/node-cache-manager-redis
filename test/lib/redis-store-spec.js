@@ -3,8 +3,10 @@ var redisStore = require('../../index');
 var sinon = require('sinon');
 var assert = require('assert');
 
+
 var redisCache;
 var customRedisCache;
+var sandbox;
 
 before(function () {
   redisCache = require('cache-manager').caching({
@@ -33,12 +35,15 @@ before(function () {
       return redisCache.store.isCacheableValue(val);
     }
   });
+
+  sandbox = sinon.sandbox.create();
 });
 
 beforeEach(function(done) {
   redisCache.reset(function() {
     done();
   });
+  sandbox.restore();
 });
 
 describe ('initialization', function () {
@@ -192,15 +197,11 @@ describe('get', function () {
 
   it('should reject promise on error', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sinon.stub(pool, 'release');
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
     redisCache.get('foo')
       .then(() => done(new Error ('Should reject')))
-      .catch(() => done())
-      .then(() => {
-        pool.acquireDb.restore();
-        pool.release.restore();
-      });
+      .catch(() => done());
   });
 
   it('should retrieve a value for a given key', function (done) {
@@ -235,8 +236,8 @@ describe('get', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sinon.stub(pool, 'release');
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
     redisCache.get('foo', function (err) {
       pool.acquireDb.restore();
       pool.release.restore();
@@ -252,30 +253,27 @@ describe('del', function () {
     done();
   });
 
-  it('should resolve promise on success', function (done) {
-    redisCache.set('foo', 'bar')
+  it('should resolve promise on success', function () {
+    return redisCache.set('foo', 'bar')
       .then(() => redisCache.del('foo', 'bar'))
-      .then(() => redisCache.get('foo'))
-      .then(result => {
-        assert.equal(result, null);
-        done();
-      }).catch(done);
+      .then(result => assert.equal(result, 'OK'));
   });
 
-  it('should reject promise on error', function (done) {
+  it('should reject promise on error', function () {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sinon.stub(pool, 'release');
-    redisCache.set('foo', 'bar')
+
+    const restore = () => {
+      sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+      sandbox.stub(pool, 'release');
+    };
+
+    return redisCache.set('foo', 'bar')
       .then(() => redisCache.del('foo'))
-      .then(res => done(res || true))
+      .then(restore, restore)
       .catch(err => {
-        pool.acquireDb.restore();
-        pool.release.restore();
         assert.notEqual(err, null);
-        done();
-      }).catch(done);
-    });
+      });
+  });
 
   it('should delete a value for a given key', function (done) {
     redisCache.set('foo', 'bar', function () {
@@ -319,12 +317,10 @@ describe('del', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sinon.stub(pool, 'release');
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
     redisCache.set('foo', 'bar', function () {
       redisCache.del('foo', function (err) {
-        pool.acquireDb.restore();
-        pool.release.restore();
         assert.notEqual(err, null);
         done();
       });
@@ -333,6 +329,24 @@ describe('del', function () {
 });
 
 describe('reset', function () {
+  it('should return a promise', function () {
+    assert.ok(redisCache.reset() instanceof Promise);
+  });
+
+  it('should resolve promise on success', function () {
+    return redisCache.reset().then(result => assert.equal(result, 'OK'));
+  });
+
+  it('should reject promise on error', function () {
+    var pool = redisCache.store._pool;
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
+
+    return redisCache.reset()
+      .then(() => assert.fail())
+      .catch(err => assert.notEqual(err, null));
+  });
+
   it('should flush underlying db', function (done) {
     redisCache.reset(function (err) {
       assert.equal(err, null);
@@ -347,8 +361,8 @@ describe('reset', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sinon.stub(pool, 'release');
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
     redisCache.reset(function (err) {
       pool.acquireDb.restore();
       pool.release.restore();
@@ -379,8 +393,8 @@ describe('ttl', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sinon.stub(pool, 'release');
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
     redisCache.set('foo', 'bar', function () {
       redisCache.ttl('foo', function (err) {
         pool.acquireDb.restore();
@@ -459,8 +473,8 @@ describe('keys', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sinon.stub(pool, 'release');
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
     redisCache.set('foo', 'bar', function () {
       redisCache.keys('f*', function (err) {
         pool.acquireDb.restore();
@@ -514,8 +528,8 @@ describe('getClient', function () {
 
   it('should return an error if there is an error acquiring a connection', function (done) {
     var pool = redisCache.store._pool;
-    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sinon.stub(pool, 'release');
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
     redisCache.store.getClient(function (err) {
       pool.acquireDb.restore();
       pool.release.restore();
