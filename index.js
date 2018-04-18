@@ -19,7 +19,7 @@ var zlib = require('zlib');
  *            Node zlib documentation for a list of valid options for gzip:
  *            https://nodejs.org/dist/latest-v4.x/docs/api/zlib.html#zlib_class_options
  */
-function redisStore(args) {
+function redisStore(args = {}) {
   var self = {
     name: 'redis',
     events: new EventEmitter()
@@ -27,7 +27,7 @@ function redisStore(args) {
 
   // cache-manager should always pass in args
   /* istanbul ignore next */
-  var redisOptions = getFromUrl(args) || args || {};
+  var redisOptions = getFromUrl(args) || args;
   var poolSettings = redisOptions;
   var Promise = args.promiseDependency || global.Promise;
 
@@ -216,19 +216,17 @@ function redisStore(args) {
    * @returns {Promise}
    */
   self.set = function(key, value, options, cb) {
+    options = options || {};
+    if (typeof options === 'function') {
+      cb = options;
+      options = {};
+    }
     return new Promise(function(resolve, reject) {
-      if (typeof options === 'function') {
-        cb = options;
-        options = {};
-      }
-
-      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result);
+      cb = cb || ((err, result) => err ? reject(err) : resolve(result));
 
       if (!self.isCacheableValue(value)) {
         return cb(new Error('value cannot be ' + value));
       }
-
-      options = options || {};
 
       var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
       var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;

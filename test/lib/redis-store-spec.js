@@ -200,7 +200,7 @@ describe('get', function () {
       .then(() => {
         pool.acquireDb.restore();
         pool.release.restore();
-      })
+      });
   });
 
   it('should retrieve a value for a given key', function (done) {
