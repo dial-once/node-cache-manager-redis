@@ -247,6 +247,36 @@ describe('get', function () {
 });
 
 describe('del', function () {
+  it('should return a promise', function (done) {
+    assert.ok(redisCache.del('foo', 'bar') instanceof Promise);
+    done();
+  });
+
+  it('should resolve promise on success', function (done) {
+    redisCache.set('foo', 'bar')
+      .then(() => redisCache.del('foo', 'bar'))
+      .then(() => redisCache.get('foo'))
+      .then(result => {
+        assert.equal(result, null);
+        done();
+      }).catch(done);
+  });
+
+  it('should reject promise on error', function (done) {
+    var pool = redisCache.store._pool;
+    sinon.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sinon.stub(pool, 'release');
+    redisCache.set('foo', 'bar')
+      .then(() => redisCache.del('foo'))
+      .then(res => done(res || true))
+      .catch(err => {
+        pool.acquireDb.restore();
+        pool.release.restore();
+        assert.notEqual(err, null);
+        done();
+      }).catch(done);
+    });
+
   it('should delete a value for a given key', function (done) {
     redisCache.set('foo', 'bar', function () {
       redisCache.del('foo', function (err) {

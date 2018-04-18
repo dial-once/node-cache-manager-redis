@@ -270,26 +270,30 @@ function redisStore(args = {}) {
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
    */
   self.del = function(key, options, cb) {
-    if (typeof options === 'function') {
-      cb = options;
-      options = {};
-    }
+    return new Promise((resolve, reject) => {
+      cb = cb || ((err, result) => err ? reject(err) : resolve(result));
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
+      if (typeof options === 'function') {
+        cb = options;
+        options = {};
       }
 
-      if (Array.isArray(key)) {
-        var multi = conn.multi();
-        for (var i = 0, l = key.length; i < l; ++i) {
-          multi.del(key[i]);
+      connect(function(err, conn) {
+        if (err) {
+          return cb && cb(err);
         }
-        multi.exec(handleResponse(conn, cb));
-      }
-      else {
-        conn.del(key, handleResponse(conn, cb));
-      }
+
+        if (Array.isArray(key)) {
+          var multi = conn.multi();
+          for (var i = 0, l = key.length; i < l; ++i) {
+            multi.del(key[i]);
+          }
+          multi.exec(handleResponse(conn, cb));
+        }
+        else {
+          conn.del(key, handleResponse(conn, cb));
+        }
+      });
     });
   };
 
