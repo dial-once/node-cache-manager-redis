@@ -7,6 +7,7 @@ var assert = require('assert');
 var redisCache;
 var customRedisCache;
 var sandbox;
+var injectError;
 
 before(function () {
   redisCache = require('cache-manager').caching({
@@ -37,10 +38,18 @@ before(function () {
   });
 
   sandbox = sinon.sandbox.create();
+
+  injectError = () => {
+    var pool = redisCache.store._pool;
+
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
+  };
 });
 
 beforeEach(function() {
   sandbox.restore();
+
   return redisCache.reset();
 });
 
@@ -194,9 +203,7 @@ describe('get', function () {
   });
 
   it('should reject promise on error', function (done) {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
     redisCache.get('foo')
       .then(() => done(new Error ('Should reject')))
       .catch(() => done());
@@ -233,12 +240,8 @@ describe('get', function () {
   });
 
   it('should return an error if there is an error acquiring a connection', function (done) {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
     redisCache.get('foo', function (err) {
-      pool.acquireDb.restore();
-      pool.release.restore();
       assert.notEqual(err, null);
       done();
     });
@@ -246,31 +249,18 @@ describe('get', function () {
 });
 
 describe('del', function () {
-  it('should return a promise', function (done) {
+  it('should return a promise', function () {
     assert.ok(redisCache.del('foo', 'bar') instanceof Promise);
-    done();
   });
 
   it('should resolve promise on success', function () {
-    return redisCache.set('foo', 'bar')
-      .then(() => redisCache.del('foo', 'bar'))
-      .then(result => assert.equal(result, 'OK'));
+    return redisCache.del('foo', 'bar').then(result => assert.equal(result, 'OK'));
   });
 
   it('should reject promise on error', function () {
-    var pool = redisCache.store._pool;
+    injectError();
 
-    const restore = () => {
-      sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-      sandbox.stub(pool, 'release');
-    };
-
-    return redisCache.set('foo', 'bar')
-      .then(() => redisCache.del('foo'))
-      .then(restore, restore)
-      .catch(err => {
-        assert.notEqual(err, null);
-      });
+    return redisCache.del('foo').then(res => assert.fail(res), err => assert.notEqual(err, null));
   });
 
   it('should delete a value for a given key', function (done) {
@@ -314,9 +304,7 @@ describe('del', function () {
   });
 
   it('should return an error if there is an error acquiring a connection', function (done) {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
     redisCache.set('foo', 'bar', function () {
       redisCache.del('foo', function (err) {
         assert.notEqual(err, null);
@@ -336,13 +324,9 @@ describe('reset', function () {
   });
 
   it('should reject promise on error', function () {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
 
-    return redisCache.reset()
-      .then(() => assert.fail())
-      .catch(err => assert.notEqual(err, null));
+    return redisCache.reset().then(res => assert.fail(res), err => assert.notEqual(err, null));
   });
 
   it('should flush underlying db', function (done) {
@@ -358,12 +342,8 @@ describe('reset', function () {
   });
 
   it('should return an error if there is an error acquiring a connection', function (done) {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
     redisCache.reset(function (err) {
-      pool.acquireDb.restore();
-      pool.release.restore();
       assert.notEqual(err, null);
       done();
     });
@@ -380,13 +360,9 @@ describe('ttl', function () {
   });
 
   it('should reject promise on error', function () {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
 
-    return redisCache.ttl('foo')
-      .then(() => assert.fail())
-      .catch(err => assert.notEqual(err, null));
+    return redisCache.ttl('foo').then(() => assert.fail(), err => assert.notEqual(err, null));
   });
 
   it('should retrieve ttl for a given key', function (done) {
@@ -408,13 +384,9 @@ describe('ttl', function () {
   });
 
   it('should return an error if there is an error acquiring a connection', function (done) {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
     redisCache.set('foo', 'bar', function () {
       redisCache.ttl('foo', function (err) {
-        pool.acquireDb.restore();
-        pool.release.restore();
         assert.notEqual(err, null);
         done();
       });
@@ -432,13 +404,9 @@ describe('keys', function () {
   });
 
   it('should reject promise on error', function () {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
 
-    return redisCache.keys('f*')
-      .then(() => assert.fail())
-      .catch(err => assert.notEqual(err, null));
+    return redisCache.keys('f*').then(res => assert.fail(res), err => assert.notEqual(err, null));
   });
 
   it('should return an array of keys for the given pattern', function (done) {
@@ -506,13 +474,9 @@ describe('keys', function () {
   });
 
   it('should return an error if there is an error acquiring a connection', function (done) {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
     redisCache.set('foo', 'bar', function () {
       redisCache.keys('f*', function (err) {
-        pool.acquireDb.restore();
-        pool.release.restore();
         assert.notEqual(err, null);
         done();
       });
@@ -553,13 +517,9 @@ describe('getClient', function () {
   });
 
   it('should reject promise on error', function () {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
 
-    return redisCache.store.getClient()
-      .then(() => assert.fail())
-      .catch(err => assert.notEqual(err, null));
+    return redisCache.store.getClient().then(res => assert.fail(res), err => assert.notEqual(err, null));
   });
 
   it('should return redis client', function (done) {
@@ -582,12 +542,8 @@ describe('getClient', function () {
   });
 
   it('should return an error if there is an error acquiring a connection', function (done) {
-    var pool = redisCache.store._pool;
-    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
-    sandbox.stub(pool, 'release');
+    injectError();
     redisCache.store.getClient(function (err) {
-      pool.acquireDb.restore();
-      pool.release.restore();
       assert.notEqual(err, null);
       done();
     });
