@@ -323,11 +323,14 @@ function redisStore(args = {}) {
    * @param {Function} cb - A callback that returns a potential error and the response
    */
   self.ttl = function(key, cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      conn.ttl(key, handleResponse(conn, cb));
+    return new Promise((resolve, reject) => {
+      cb = cb || ((err, res) => err ? reject(err) : resolve(res));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
+        }
+        conn.ttl(key, handleResponse(conn, cb));
+      });
     });
   };
 

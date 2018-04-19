@@ -373,6 +373,24 @@ describe('reset', function () {
 });
 
 describe('ttl', function () {
+  it('should return a promise', function () {
+    assert.ok(redisCache.ttl('foo') instanceof Promise);
+  });
+
+  it('should resolve promise on success', function () {
+    return redisCache.ttl('foo').then(result => assert.ok(Number.isInteger(result)));
+  });
+
+  it('should reject promise on error', function () {
+    var pool = redisCache.store._pool;
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
+
+    return redisCache.ttl('foo')
+      .then(() => assert.fail())
+      .catch(err => assert.notEqual(err, null));
+  });
+  
   it('should retrieve ttl for a given key', function (done) {
     redisCache.set('foo', 'bar', function () {
       redisCache.ttl('foo', function (err, ttl) {
@@ -382,6 +400,7 @@ describe('ttl', function () {
       });
     });
   });
+
 
   it('should retrieve ttl for an invalid key', function (done) {
     redisCache.ttl('invalidKey', function (err, ttl) {
