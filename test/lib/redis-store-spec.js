@@ -39,11 +39,9 @@ before(function () {
   sandbox = sinon.sandbox.create();
 });
 
-beforeEach(function(done) {
-  redisCache.reset(function() {
-    done();
-  });
+beforeEach(function() {
   sandbox.restore();
+  return redisCache.reset();
 });
 
 describe ('initialization', function () {
@@ -543,6 +541,27 @@ describe('isCacheableValue', function () {
 });
 
 describe('getClient', function () {
+  it('should return a promise', function () {
+    assert.ok(redisCache.store.getClient().then(redis => redis.done()) instanceof Promise);
+  });
+
+  it('should resolve promise on success', function () {
+    return redisCache.store.getClient().then(redis => {
+      assert.notEqual(redis, null);
+      redis.done();
+    });
+  });
+
+  it('should reject promise on error', function () {
+    var pool = redisCache.store._pool;
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
+
+    return redisCache.store.getClient()
+      .then(() => assert.fail())
+      .catch(err => assert.notEqual(err, null));
+  });
+
   it('should return redis client', function (done) {
     redisCache.store.getClient(function (err, redis) {
       assert.equal(err, null);

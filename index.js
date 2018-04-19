@@ -365,6 +365,7 @@ function redisStore(args = {}) {
       cb = options;
       options = {};
     }
+
     return new Promise((resolve, reject) => {
       cb = cb || ((err, res) => err ? reject(err) : resolve(res));
       connect(function(err, conn) {
@@ -417,22 +418,26 @@ function redisStore(args = {}) {
    * Returns the underlying redis client connection
    * @method getClient
    * @param {Function} cb - A callback that returns a potential error and an object containing the Redis client and a done method
+   * @returns {Promise}
    */
   self.getClient = function(cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      cb(null, {
-        client: conn,
-        done: function(done) {
-          var args = Array.prototype.slice.call(arguments, 1);
-          pool.release(conn);
-
-          if (done && typeof done === 'function') {
-            done.apply(null, args);
-          }
+    return new Promise((resolve, reject) => {
+      cb = cb || ((err, res) => err ? reject(err) : resolve(res));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
         }
+        cb(null, {
+          client: conn,
+          done: function(done) {
+            var args = Array.prototype.slice.call(arguments, 1);
+            pool.release(conn);
+
+            if (done && typeof done === 'function') {
+              done.apply(null, args);
+            }
+          }
+        });
       });
     });
   };
