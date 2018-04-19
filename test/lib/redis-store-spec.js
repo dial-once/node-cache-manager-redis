@@ -390,7 +390,7 @@ describe('ttl', function () {
       .then(() => assert.fail())
       .catch(err => assert.notEqual(err, null));
   });
-  
+
   it('should retrieve ttl for a given key', function (done) {
     redisCache.set('foo', 'bar', function () {
       redisCache.ttl('foo', function (err, ttl) {
@@ -400,7 +400,6 @@ describe('ttl', function () {
       });
     });
   });
-
 
   it('should retrieve ttl for an invalid key', function (done) {
     redisCache.ttl('invalidKey', function (err, ttl) {
@@ -426,6 +425,24 @@ describe('ttl', function () {
 });
 
 describe('keys', function () {
+  it('should return a promise', function () {
+    assert.ok(redisCache.keys('f*') instanceof Promise);
+  });
+
+  it('should resolve promise on success', function () {
+    return redisCache.keys('f*').then(result => assert.ok(Array.isArray(result)));
+  });
+
+  it('should reject promise on error', function () {
+    var pool = redisCache.store._pool;
+    sandbox.stub(pool, 'acquireDb').yieldsAsync('Something unexpected');
+    sandbox.stub(pool, 'release');
+
+    return redisCache.keys('f*')
+      .then(() => assert.fail())
+      .catch(err => assert.notEqual(err, null));
+  });
+
   it('should return an array of keys for the given pattern', function (done) {
     redisCache.set('foo', 'bar', function () {
       redisCache.set('far', 'boo', function () {

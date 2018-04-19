@@ -321,6 +321,7 @@ function redisStore(args = {}) {
    * @method ttl
    * @param {String} key - The cache key
    * @param {Function} cb - A callback that returns a potential error and the response
+   * @returns {Promise}
    */
   self.ttl = function(key, cb) {
     return new Promise((resolve, reject) => {
@@ -341,8 +342,10 @@ function redisStore(args = {}) {
    * @param {Object} [options] - The options (default: {})
    * @param {number} [options.scanCount] - The number of keys to traverse with each call to SCAN (default: 100)
    * @param {Function} cb - A callback that returns a potential error and the response
+   * @returns {Promise}
    */
   self.keys = function(pattern, options, cb) {
+    options = options || {};
 
     // Account for all argument permutations.
     // Only cb supplied.
@@ -362,36 +365,38 @@ function redisStore(args = {}) {
       cb = options;
       options = {};
     }
+    return new Promise((resolve, reject) => {
+      cb = cb || ((err, res) => err ? reject(err) : resolve(res));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
+        }
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
+        // Use an object to dedupe as scan can return duplicates
+        var keysObj = {};
+        var scanCount = Number(options.scanCount) || 100;
 
-      // Use an object to dedupe as scan can return duplicates
-      var keysObj = {};
-      var scanCount = Number(options.scanCount) || 100;
+        (function nextBatch(cursorId) {
+          conn.scan(cursorId, 'match', pattern, 'count', scanCount, function (err, result) {
+            if (err) {
+              handleResponse(conn, cb)(err);
+            }
 
-      (function nextBatch(cursorId) {
-        conn.scan(cursorId, 'match', pattern, 'count', scanCount, function (err, result) {
-          if (err) {
-            handleResponse(conn, cb)(err);
-          }
+            var nextCursorId = result[0];
+            var keys = result[1];
 
-          var nextCursorId = result[0];
-          var keys = result[1];
+            for (var i = 0, l = keys.length; i < l; ++i) {
+              keysObj[keys[i]] = 1;
+            }
 
-          for (var i = 0, l = keys.length; i < l; ++i) {
-            keysObj[keys[i]] = 1;
-          }
+            if (nextCursorId !== '0') {
+              return nextBatch(nextCursorId);
+            }
 
-          if (nextCursorId !== '0') {
-            return nextBatch(nextCursorId);
-          }
-
-          handleResponse(conn, cb)(null, Object.keys(keysObj));
-        });
-      })(0);
+            handleResponse(conn, cb)(null, Object.keys(keysObj));
+          });
+        })(0);
+      });
     });
   };
 
