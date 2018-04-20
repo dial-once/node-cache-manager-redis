@@ -19,7 +19,7 @@ var zlib = require('zlib');
  *            Node zlib documentation for a list of valid options for gzip:
  *            https://nodejs.org/dist/latest-v4.x/docs/api/zlib.html#zlib_class_options
  */
-function redisStore(args) {
+function redisStore(args = {}) {
   var self = {
     name: 'redis',
     events: new EventEmitter()
@@ -27,7 +27,7 @@ function redisStore(args) {
 
   // cache-manager should always pass in args
   /* istanbul ignore next */
-  var redisOptions = getFromUrl(args) || args || {};
+  var redisOptions = getFromUrl(args) || args;
   var poolSettings = redisOptions;
   var Promise = args.promiseDependency || global.Promise;
 
@@ -216,19 +216,17 @@ function redisStore(args) {
    * @returns {Promise}
    */
   self.set = function(key, value, options, cb) {
+    options = options || {};
+    if (typeof options === 'function') {
+      cb = options;
+      options = {};
+    }
     return new Promise(function(resolve, reject) {
-      if (typeof options === 'function') {
-        cb = options;
-        options = {};
-      }
-
-      cb = cb ? cb : (err, result) => err ? reject(err) : resolve(result);
+      cb = cb || ((err, result) => err ? reject(err) : resolve(result));
 
       if (!self.isCacheableValue(value)) {
         return cb(new Error('value cannot be ' + value));
       }
-
-      options = options || {};
 
       var ttl = (options.ttl || options.ttl === 0) ? options.ttl : redisOptions.ttl;
       var compress = (options.compress || options.compress === false) ? options.compress : redisOptions.compress;
@@ -270,28 +268,33 @@ function redisStore(args) {
    * @param {String|Array} key - The cache key or array of keys to delete
    * @param {Object} [options] - The options (optional)
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
+   * @returns {Promise}
    */
   self.del = function(key, options, cb) {
-    if (typeof options === 'function') {
-      cb = options;
-      options = {};
-    }
+    return new Promise((resolve, reject) => {
+      cb = cb || ((err) => err ? reject(err) : resolve('OK'));
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
+      if (typeof options === 'function') {
+        cb = options;
+        options = {};
       }
 
-      if (Array.isArray(key)) {
-        var multi = conn.multi();
-        for (var i = 0, l = key.length; i < l; ++i) {
-          multi.del(key[i]);
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
         }
-        multi.exec(handleResponse(conn, cb));
-      }
-      else {
-        conn.del(key, handleResponse(conn, cb));
-      }
+
+        if (Array.isArray(key)) {
+          var multi = conn.multi();
+          for (var i = 0, l = key.length; i < l; ++i) {
+            multi.del(key[i]);
+          }
+          multi.exec(handleResponse(conn, cb));
+        }
+        else {
+          conn.del(key, handleResponse(conn, cb));
+        }
+      });
     });
   };
 
@@ -299,13 +302,17 @@ function redisStore(args) {
    * Delete all the keys of the currently selected DB
    * @method reset
    * @param {Function} [cb] - A callback that returns a potential error, otherwise null
+   * @returns {Promise}
    */
   self.reset = function(cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      conn.flushdb(handleResponse(conn, cb));
+    return new Promise((resolve, reject) => {
+      cb = cb || (err => err ? reject(err) : resolve('OK'));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
+        }
+        conn.flushdb(handleResponse(conn, cb));
+      });
     });
   };
 
@@ -314,13 +321,17 @@ function redisStore(args) {
    * @method ttl
    * @param {String} key - The cache key
    * @param {Function} cb - A callback that returns a potential error and the response
+   * @returns {Promise}
    */
   self.ttl = function(key, cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      conn.ttl(key, handleResponse(conn, cb));
+    return new Promise((resolve, reject) => {
+      cb = cb || ((err, res) => err ? reject(err) : resolve(res));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
+        }
+        conn.ttl(key, handleResponse(conn, cb));
+      });
     });
   };
 
@@ -331,8 +342,10 @@ function redisStore(args) {
    * @param {Object} [options] - The options (default: {})
    * @param {number} [options.scanCount] - The number of keys to traverse with each call to SCAN (default: 100)
    * @param {Function} cb - A callback that returns a potential error and the response
+   * @returns {Promise}
    */
   self.keys = function(pattern, options, cb) {
+    options = options || {};
 
     // Account for all argument permutations.
     // Only cb supplied.
@@ -353,35 +366,38 @@ function redisStore(args) {
       options = {};
     }
 
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
+    return new Promise((resolve, reject) => {
+      cb = cb || ((err, res) => err ? reject(err) : resolve(res));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
+        }
 
-      // Use an object to dedupe as scan can return duplicates
-      var keysObj = {};
-      var scanCount = Number(options.scanCount) || 100;
+        // Use an object to dedupe as scan can return duplicates
+        var keysObj = {};
+        var scanCount = Number(options.scanCount) || 100;
 
-      (function nextBatch(cursorId) {
-        conn.scan(cursorId, 'match', pattern, 'count', scanCount, function (err, result) {
-          if (err) {
-            handleResponse(conn, cb)(err);
-          }
+        (function nextBatch(cursorId) {
+          conn.scan(cursorId, 'match', pattern, 'count', scanCount, function (err, result) {
+            if (err) {
+              handleResponse(conn, cb)(err);
+            }
 
-          var nextCursorId = result[0];
-          var keys = result[1];
+            var nextCursorId = result[0];
+            var keys = result[1];
 
-          for (var i = 0, l = keys.length; i < l; ++i) {
-            keysObj[keys[i]] = 1;
-          }
+            for (var i = 0, l = keys.length; i < l; ++i) {
+              keysObj[keys[i]] = 1;
+            }
 
-          if (nextCursorId !== '0') {
-            return nextBatch(nextCursorId);
-          }
+            if (nextCursorId !== '0') {
+              return nextBatch(nextCursorId);
+            }
 
-          handleResponse(conn, cb)(null, Object.keys(keysObj));
-        });
-      })(0);
+            handleResponse(conn, cb)(null, Object.keys(keysObj));
+          });
+        })(0);
+      });
     });
   };
 
@@ -402,22 +418,26 @@ function redisStore(args) {
    * Returns the underlying redis client connection
    * @method getClient
    * @param {Function} cb - A callback that returns a potential error and an object containing the Redis client and a done method
+   * @returns {Promise}
    */
   self.getClient = function(cb) {
-    connect(function(err, conn) {
-      if (err) {
-        return cb && cb(err);
-      }
-      cb(null, {
-        client: conn,
-        done: function(done) {
-          var args = Array.prototype.slice.call(arguments, 1);
-          pool.release(conn);
-
-          if (done && typeof done === 'function') {
-            done.apply(null, args);
-          }
+    return new Promise((resolve, reject) => {
+      cb = cb || ((err, res) => err ? reject(err) : resolve(res));
+      connect(function(err, conn) {
+        if (err) {
+          return cb(err);
         }
+        cb(null, {
+          client: conn,
+          done: function(done) {
+            var args = Array.prototype.slice.call(arguments, 1);
+            pool.release(conn);
+
+            if (done && typeof done === 'function') {
+              done.apply(null, args);
+            }
+          }
+        });
       });
     });
   };
