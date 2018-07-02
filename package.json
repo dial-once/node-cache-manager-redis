@@ -4,7 +4,7 @@
   "description": "Redis store for the node-cache-manager",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/mocha --recursive test",
+    "test": "node_modules/.bin/mocha --recursive test --exit",
     "coverage": "node_modules/.bin/istanbul cover _mocha -- test --recursive",
     "lint": "node_modules/.bin/jshint .",
     "jsdoc": "node_modules/.bin/jsdoc . --package package.json --readme README.md --template node_modules/minami --destination docs"
@@ -31,7 +31,7 @@
     "jsdoc": "^3.3.3",
     "jshint": "^2.8.0",
     "minami": "^1.1.1",
-    "mocha": "^3.0.2",
+    "mocha": "^5.2.0",
     "sinon": "^1.17.2"
   }
 }
