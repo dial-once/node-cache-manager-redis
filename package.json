@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node_modules/.bin/mocha --recursive test --exit",
-    "coverage": "node_modules/.bin/istanbul cover _mocha -- test --recursive",
+    "coverage": "node_modules/.bin/istanbul cover _mocha -- test --recursive --exit",
     "lint": "npm bin jshint .",
     "jsdoc": "node_modules/.bin/jsdoc . --package package.json --readme README.md --template node_modules/minami --destination docs"
   },
