@@ -1,7 +1,13 @@
 Node Cache Manager store for Redis
 ==================================
 
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/3d5933f95c88472d9075dc302c8d62e1)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/3d5933f95c88472d9075dc302c8d62e1)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Dependency Status](https://david-dm.org/dial-once/node-cache-manager-redis.svg)](https://david-dm.org/dial-once/node-cache-manager-redis)
+[![Pipeline Status](https://gitlab.com/dial-once/node-cache-manager-redis/badges/master/pipeline.svg)](https://gitlab.com/dial-once/node-cache-manager-redis/commits/master)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/gate?key=node-cache-manager-redis)](http://sonar.dialonce.net/dashboard?id=node-cache-manager-redis)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-cache-manager-redis&metric=ncloc)](http://sonar.dialonce.net/dashboard?id=node-cache-manager-redis)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-cache-manager-redis&metric=coverage)](http://sonar.dialonce.net/dashboard?id=node-cache-manager-redis)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-cache-manager-redis&metric=code_smells)](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-cache-manager-redis&metric=coverage)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-cache-manager-redis&metric=bugs)](http://sonar.dialonce.net/dashboard?id=node-cache-manager-redis)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-cache-manager-redis&metric=sqale_debt_ratio)](http://sonar.dialonce.net/dashboard?id=node-cache-manager-redis)
 
 The Redis store for the [node-cache-manager](https://github.com/BryanDonovan/node-cache-manager) module.
 
@@ -99,11 +105,11 @@ redisCache.set('foo', 'bar', function () {
         redisCache.keys('fo*', function (err, arrayOfKeys) {
             // arrayOfKeys: ['foo']
         });
-        
+
         redisCache.keys(function (err, arrayOfKeys) {
             // arrayOfKeys: ['foo', 'far']
         });
-        
+
         redisCache.keys('fa*', { scanCount: 10 }, function (err, arrayOfKeys) {
             // arrayOfKeys: ['far']
         });
@@ -200,9 +206,9 @@ redisCache.set('foo', 'bar', { compress: false }, function(err) {
     });
 });
 
-// Setting the compress option to true will enable a default configuration 
-// for best speed using gzip. For advanced use, a configuration object may 
-// also be passed with implementation-specific parameters. Currently, only 
+// Setting the compress option to true will enable a default configuration
+// for best speed using gzip. For advanced use, a configuration object may
+// also be passed with implementation-specific parameters. Currently, only
 // the built-in zlib/gzip implementation is supported.
 var zlib = require('zlib');
 var redisCache = cacheManager.caching({
@@ -216,7 +222,7 @@ var redisCache = cacheManager.caching({
 	  type: 'gzip',
 	  params: {
 	    level: zlib.Z_BEST_COMPRESSION
-	  } 
+	  }
 	}
 });
 ```

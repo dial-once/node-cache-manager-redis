@@ -1,4 +1,4 @@
-var config = require('../config.json');
+var config = require('../config.js');
 var redisStore = require('../../index');
 var sinon = require('sinon');
 var assert = require('assert');

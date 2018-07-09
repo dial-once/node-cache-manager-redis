@@ -1,0 +1,14 @@
+image: dialonce/gitlab
+
+services:
+  - redis:alpine
+
+cache:
+  paths:
+  - node_modules/
+
+test:
+  script:
+   - make deps
+   - make test
+   - make sonar
