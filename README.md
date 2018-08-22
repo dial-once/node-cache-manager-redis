@@ -1,7 +1,7 @@
 Node Cache Manager store for Redis
 ==================================
 
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/3d5933f95c88472d9075dc302c8d62e1)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/3d5933f95c88472d9075dc302c8d62e1)](https://www.codacy.com/app/dialonce-jkernech/node-cache-manager-redis) [![Dependency Status](https://david-dm.org/dial-once/node-cache-manager-redis.svg)](https://david-dm.org/dial-once/node-cache-manager-redis)
+(https://david-dm.org/dial-once/node-cache-manager-redis.svg)](https://david-dm.org/dial-once/node-cache-manager-redis)
 [![Sonar](http://proxy.dialonce.net/sonar/api/badges/gate?key=node-cache-manager-redis)](http://sonar.dialonce.net/dashboard?id=node-cache-manager-redis)
 [![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-cache-manager-redis&metric=ncloc)](http://sonar.dialonce.net/dashboard?id=node-cache-manager-redis)
 [![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-cache-manager-redis&metric=coverage)](http://sonar.dialonce.net/dashboard?id=node-cache-manager-redis)
