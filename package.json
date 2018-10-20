@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node_modules/.bin/mocha --recursive test --exit",
-    "coverage": "node_modules/.bin/istanbul cover _mocha -- test --recursive --exit",
+    "cover": "CONSOLE_LOGGING=false ./node_modules/.bin/nyc --reporter=lcov ./node_modules/.bin/_mocha test --recursive --timeout=10000 --exit",
     "lint": "npm bin jshint .",
     "jsdoc": "node_modules/.bin/jsdoc . --package package.json --readme README.md --template node_modules/minami --destination docs"
   },
@@ -27,11 +27,11 @@
     "sol-redis-pool": "^0.3.2"
   },
   "devDependencies": {
-    "istanbul": "^0.4.0",
+    "mocha": "^5.2.0",
+    "nyc": "^12.0.2",
     "jsdoc": "^3.3.3",
     "jshint": "^2.8.0",
     "minami": "^1.1.1",
-    "mocha": "^5.2.0",
     "sinon": "^1.17.2"
   }
 }
