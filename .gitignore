@@ -3,3 +3,4 @@ coverage
 docs
 .idea/
 package-lock.json
+.nyc_output
