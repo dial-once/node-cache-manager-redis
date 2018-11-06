@@ -23,6 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "cache-manager": "^2.2.0",
+    "circular-json": "^0.5.7",
     "redis-url": "^1.2.1",
     "sol-redis-pool": "^0.3.2"
   },

@@ -4,6 +4,7 @@ var RedisPool = require('sol-redis-pool');
 var EventEmitter = require('events').EventEmitter;
 var redisUrl = require('redis-url');
 var zlib = require('zlib');
+var JSON = require('circular-json');
 
 /**
  * The cache manager Redis Store module
