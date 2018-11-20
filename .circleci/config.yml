@@ -1,0 +1,75 @@
+# Javascript Node CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+#
+version: 2
+jobs:
+  build:
+    working_directory: ~/node-cache-manager-redis
+    docker:
+      - image: circleci/node:8.9
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+    steps:
+      - checkout
+      - run:
+          name: Install make
+          command: sudo apt-get update && sudo apt-get -y install gcc make
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+          - v1-dependencies-{{ .Branch }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies
+      - run:
+          name: Install dependencies
+          command: make deps
+      - save_cache:
+          paths:
+          - node_modules
+          key: v1-dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+      - run:
+          name: Test project
+          command: make test
+
+      # Special step used to persist a temporary file to be used by another job in the workflow
+      - persist_to_workspace:
+          root: ~/node-cache-manager-redis
+          paths:
+            - coverage
+
+  sonarqube:
+    working_directory: ~/node-cache-manager-redis
+    docker:
+        # Sonarqube need OpenJDK 8 to run his analysis correctly
+        - image: circleci/openjdk:8-jdk-browsers
+    steps:
+      - checkout
+      # Special step used to attach the workflow’s workspace to the current container
+      # Retrieve coverage's folder for sonarqube
+      - attach_workspace:
+          at: ~/node-cache-manager-redis
+
+      # Sonarqube need to have node installed to run his analysis
+      - run:
+          name: Install node
+          command: |
+            sudo apt install curl
+            curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
+            sudo apt install nodejs
+      - run:
+          name: Sonar analysis
+          command: make sonar
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - sonarqube:
+          # sonarqube's job waiting for build's job before to run
+          requires:
+            - build
