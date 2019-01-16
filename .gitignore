@@ -4,3 +4,4 @@ docs
 .idea/
 package-lock.json
 .sonar/
+.nyc_output
